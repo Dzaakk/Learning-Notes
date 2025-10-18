@@ -29,7 +29,7 @@ Everything from HTTP to WebSocket to FTP sits on top of sockets.
 if sockets didn't exist, you'd have no way for apps to communicate through the network stack
 
 ## 3. TCP (Transmission Control Protocol)
-TCP is the reliable, plite delivery guy of the internet.
+TCP is the reliable, polite delivery guy of the internet.
 
 When data travels across the internet, it's chopped into **packets** (small chunks). TCP ensures:
 - Every packet arrives in **order**.
@@ -50,7 +50,7 @@ Because it ensures reliability, it's slower (more handshake, error checking).
 
 ## 4. UDP (User Datagram Protocol)
 UDP is the fast but *carefree* delivery guy.
-- It sends packetsa **without checking** if they arrive or not.
+- It sends packets **without checking** if they arrive or not.
 - No guarantee of order, no retries — just ***fire and forget***.
 
 ### Analogy
