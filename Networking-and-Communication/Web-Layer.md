@@ -70,3 +70,22 @@ When you type a URL:
 3. Sends an **HTTP/HTTPS request**.
 4. The server processes it and replies with an **HTTP response**.
 5. Your browser renders it — securely, if using HTTPS.
+
+## 6. HTTP Status Codes
+Status codes are **3 digit numbers** that the server sends to the client tto indicate "how did your request go?"
+- First digit = category (2xx, 3xx, 4xx, 5xx)
+- Last two digits = specific detail
+
+### 2xx - Success (Request Successful)
+#### 200 OK
+- Request succeeded, this is the most common response.
+- GET successfully retrieved data, POST successfully submitted data.
+- *When to use*: Default success response.
+#### 201 Created
+- New resource was successfully created.
+- *When to use*: After POST that creates a new user, article, etc.
+- *Best practice*: Include `Location` header with the new resource's URL
+#### 204 No Content
+- Request succeeded, but server sends no data back.
+- *When to use*: Successful DELETE, or PUT/PATCH that doesn't need to return data
+- *Why*: Saves bandwidth
