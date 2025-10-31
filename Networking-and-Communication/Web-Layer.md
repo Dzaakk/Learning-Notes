@@ -89,3 +89,17 @@ Status codes are **3 digit numbers** that the server sends to the client tto ind
 - Request succeeded, but server sends no data back.
 - *When to use*: Successful DELETE, or PUT/PATCH that doesn't need to return data
 - *Why*: Saves bandwidth
+---
+### 3xx - Redirection (Moved Location)
+#### 301 Moved Permanently
+- Resource permanently moved to new URL.
+- *When to use*: Wesite changed domain, old URL deprecated.
+- *impact*: Browser will cache this redirect, future requests gor directly to new URL.
+### 302 Found (Temporary Redirect)
+- Resource temporarily at different location.
+- *When to use*: Maintenance mode, A/B testing.
+- *Impact*: Browser doesn't cache, still checks original URL next time.
+### 304 Not Modified
+- Resource hasn't changed since client's last request.
+- *When to use*: Browser ask "any updates?" with `If-None-Match` or `If-Modified-Since` header.
+- *Why*: CACHING -b rowser can use cached version, no need to download again.
