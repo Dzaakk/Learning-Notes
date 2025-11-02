@@ -144,9 +144,21 @@ Status codes are **3 digit numbers** that the server sends to the client to indi
 - *Example*: Database query took too long (>30s).
 - *Engineering note*: This hints to optimize query or increase timeout.
 
-## Engineering Tips:
+### Engineering Tips:
 1. **Always handle errors properly** - don't jsut assume 200.
 2. **Use specific status code** - don't make everything 200 or 500.
 3. **Log 5xx errors** - these are bugs that need fixing.
 4. **Monitor 4xx rates** - could indicate API design issues if too high.
 5. **Use 429 for rate limiting** - better than blocking completely.
+
+## 7. CORS (Cross-Origin Resource Sharing)
+### The Problem:
+Browser have a security policy: **Same-Origin Policy**
+- Origin = `protocol + domain + port`
+- Example origins: 
+    - `https://example.com:443`
+    - `https://localhost:3000`
+    - `https://api.example.com`
+
+**Same-Origin Policy says**: JavaScript at `https://example.com` **CANNOT** make requests to `https://api.example.com`\
+**why?** Protection from malicious scripts stealing data from other sites.
