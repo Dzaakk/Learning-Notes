@@ -162,3 +162,39 @@ Browser have a security policy: **Same-Origin Policy**
 
 **Same-Origin Policy says**: JavaScript at `https://example.com` **CANNOT** make requests to `https://api.example.com`\
 **why?** Protection from malicious scripts stealing data from other sites.
+
+---
+### The Solution: CORS
+Servers can **explicitly allow certain origins to access their resources via **CORS headers**.\
+**Server response with**:
+```http
+Access-Control-Allow-Origin: https://example.com
+Access-Control-Allow-Method: GET, POST, PUT
+Access-Control-Allow-Headers: Content-Type, Authorization
+```
+**Meaning**:
+- `example.com` can access this API
+- Can use GET, POST, PUT methods
+- Can include Content-Type and Authorization headers
+---
+
+**Preflight Request (The OPTIONS Check)**\
+For "complex" requests (non-simple), browser sends a **preflight request** first:
+
+#### 1. Browser sends OPTION request:
+```http
+OPTIONS /api/users HTTP/1.1
+Origin: https://example.com
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: Content-Type
+```
+#### 2. Server replies:
+```
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: https://example.com
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: Content-Type
+```
+#### 3. If OK, browser then sends the actual request
+---
+
