@@ -198,3 +198,28 @@ Access-Control-Request-Headers: Content-Type
 #### 3. If OK, browser then sends the actual request
 ---
 
+### Simple vs Complex Requests
+
+#### Simple requests (no preflight):
+- Methods : GET, POST, HEAD.
+- Headers: only Accept, Content-Type(limited), etc.
+- Content-Type: `application/x-www-form-urlencoded`, `multipart/form-data`, `text/plain`.
+
+#### Complex requests (need preflight):
+- Custom headers (like `Authorization`).
+- Methods: PUT, DELETE, PATCH.
+- Content-Type: `application/json`.
+---
+
+### Common CORS Issues & Solutions:
+#### Issue 1: "No Access-Control-Allow-Origin-Header"
+- **Problem**: Server hasn't set CORS headers.
+- **Solution**: Backend must add CORS headers.
+#### Issue 2: "Credentials mode is 'include'"
+- **Problem**: Sending cookies cross-origin but server doesn't allow.
+- **Solution**: Server set `Access-Control-Allow-Credentials: true`.
+#### Issue 3: Wildcard (`*`) doesn't work with credentials
+- **Problem**: `Access-Control-Allow-Origin: *` + cookies = forbidden.
+- **Solution**: Specify exact origin: `Access-Control-Allow-Origin: https://example.com`.
+
+
