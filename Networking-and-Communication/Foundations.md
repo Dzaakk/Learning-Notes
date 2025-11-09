@@ -82,3 +82,40 @@ WebSocket is like a live phone call — both can talk and listen instantly.
 
 ### Technical note:  
 It starts as an HTTP connection, then **upgrades** to a persistent WebSocket connection.
+
+## 6. Polling & Server-Sent Events
+
+### The Problem:
+Sometimes clients need **real-time updates** from server, but WebSocket is too heavy or you don't need **two-way** communication.
+
+### Use cases:
+- Notifications
+- Live scores
+- Stock prices
+- System monitoring dashboards
+---
+
+### Solution 1: Short Polling (The Naive Way)
+**How it works**: Client requests to server **repeatedly** every few seconds.
+#### Example:
+```javascript
+// Client-side (browser)
+setInterval(() => {
+    fetch('/api/notifications')
+    .then(res => res.json())
+    .then(data => updateUI(data));
+}, 5000); // Every 5 seconds
+```
+
+### Pros:
+- Simple to implement.
+- Works everywhere (just HTTP).
+### Cons:
+- **Wasteful** - most requests return "no new data".
+- High server load (many empty requests).
+- Not truly real-time (max 5s delay if polling every 5s).
+- Battery drain on mobile.
+### When to use:
+- Quick prototype.
+- Updates every 30s+ is acceptable.
+- Low trafficv systems.
