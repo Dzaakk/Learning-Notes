@@ -119,3 +119,29 @@ setInterval(() => {
 - Quick prototype.
 - Updates every 30s+ is acceptable.
 - Low trafficv systems.
+
+### Solution 2: Long Polling (Smarter Polling)
+
+**How it works**: Client requests, server **holds the connection open** until there's new data (or timeout).
+
+#### Flow:
+1. Client: "Any new data?"
+2. Server: waits... waits... waits...
+3. Server: "Yes! Here's new data" (close connection)
+4. Client: immediately re-request "Any new data?"
+
+### Pros:
+- Less wasteful than shor polling.
+- Near real-time (data comes immediately when available).
+- Works over HTTP.
+
+### Cons:
+- Server has many **hanging connections** (resource intensive).
+- Complex to implement properly.
+- Timeout management tricky.
+- Not truly bidirectional.
+
+### When to use:
+- Need near real-time but WebSocket overkill.
+- Legacy systems that can't do WebSocket.
+- Chat applications (WhatsApp Web used this before WebSocket).
