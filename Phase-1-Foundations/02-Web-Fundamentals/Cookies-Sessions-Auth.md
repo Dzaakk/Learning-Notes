@@ -81,3 +81,68 @@ Set-Cookie: session_id=abc123; HttpOnly; Secure; SameSite=Strict
 |Persistent (survives browser close)|Sent with EVERY request (overhead)|
 |Server-side validation|Vulnerable if not secured properly|
 |Works for traditional web apps|Privacy concerns (tracking)|
+
+
+## Sessions (Server-Side Memory)
+A **session** is server-side storage that remembers user state.
+
+### How Sessions Work
+![sessions](./images/Sessions.excalidraw.png)
+
+### Session Storage Options
+|Storage|Speed|Scalability|Persistence|
+|:------|:----|:----------|:----------|
+|In-Memory|⚡ Fastest|❌ Single server only|Lost on restart|
+|Redis|Very Fast|✅ Shared across servers|✅ Persistent|
+|Database|Slower|✅ Shared|✅ Persistent|
+|Memcached|Fast|✅ Shared|❌ Not persistent|
+
+### Real-World Session Example (E-commerce)
+```javaScript
+{
+  session_id: "xyz789",
+  user: {
+    id: 123,
+    email: "bob@example.com",
+    role: "customer"
+  },
+  cart: [
+    { product_id: 456, quantity: 2 },
+    { product_id: 789, quantity: 1 }
+  ],
+  created_at: "2024-01-15T10:00:00Z",
+  expires_at: "2024-01-15T22:00:00Z"
+}
+```
+#### Why this matters:
+- User's cart persist across pages.
+- Even if user closes browser, cart saved (until expiration).
+- Multiple servers can access same session (via Redis).
+
+### Session vs Cookies: What's the Difference?
+|Aspect|Cookie|Session|
+|:-----|:-----|:------|
+|Storage Location|Client (browser)|Server (memory/Redis)|
+|Security|Less secure (client-side)|More secure (server-side)|
+|Size Limit|4KB|No limit|
+|Access|JavaScript can read (unless HttpOnly)|Only server can read|
+|Lifespan|Configurable (days/weeks)|Usually shorter (hours)|
+
+### Analogy
+- **Cookie**: Hotel key card (you carry it, shows room nubmer).
+- **Session**: Hotel database (front desk knows your reservation details).
+
+## Authentication vs Authorization
+
+### Key Difference
+|Concept|Question|Example|
+|:------|:-------|:------|
+|Authentication|"Who are you?"|Login with username/password|
+|Authorization|"What can you do?"|Admin can delete posts, user cannot|
+
+### Visual Flow
+![auth-flow](./images/auth-flow.excalidraw.png)
+
+### Real-World Example (Google Drive)
+![auth-example](./images/auth-example.excalidraw.png)
+
