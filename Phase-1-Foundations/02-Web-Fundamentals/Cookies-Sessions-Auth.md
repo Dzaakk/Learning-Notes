@@ -146,3 +146,71 @@ A **session** is server-side storage that remembers user state.
 ### Real-World Example (Google Drive)
 ![auth-example](./images/auth-example.excalidraw.png)
 
+## JWT (JSON Web Token) - Modern Authentication
+**JWT** is a self-contained token that stores user info **inside the token itself**.
+
+### Structure of JWT
+![jwt-structure](./images/jwt-structure.excalidraw.png)
+
+#### Decoded JWT Example
+```json
+// Header
+{
+  "alg": "HS256",
+  "typ": "JWT"
+}
+
+// Payload (Your Data)
+{
+  "user_id": 123,
+  "email": "alice@example.com",
+  "role": "admin",
+  "exp": 1705334400  // Expiration timestamp
+}
+
+// Signature (Prevents Tampering)
+HMACSHA256(
+  base64UrlEncode(header) + "." + base64UrlEncode(payload),
+  secret_key
+)
+```
+
+### How JWT Works
+![how-jwt-works](./images/how-jwt-works.excalidraw.png)
+
+### JWT vs Session Comparison
+|Feature|Session + Cookie|JWT|
+|:------|:---------------|:--|
+|Storage|Server (Redis)|Client (localStorage)|
+|Scalability|Needs shared Redis|✅ Stateless (no server storage)|
+|Security|✅ Server controls|Can't revoke easily|
+|Size|4KB cookie|Larger (1-2KB token)|
+|Expiration|Server controls|Must wait for expiry|
+|Use Case|Traditional web apps|APIs, microservices, SPAs|
+
+#### notes
+- SPAs: Single Page Applications (ex: Gmail, Google Docs, Facebook, Twitter Web, Notion).
+- Size: JWTs are larger (around 1-2KB) because they contain an encoded header, payload, and signature. Unlike a simple session ID, which is only a few bytes, but they're still smaller than the 4KB cookie storage limit.
+
+### JWT Security Best Practice
+
+#### ✅DO
+- Store JWT in HttpOnly cookie (best) or sessionStorage.
+- Use HTTPS only.
+- Set short expiration (15-30 min).
+- Implement refresh tokens.
+
+#### ❌DON'T
+- Store JWT in localStorage (XSS vulnerable).
+- Put sensitive data in payload (it's readable!).
+- Use weak secret keys.
+- Skip expiration check.
+
+### Real-World JWT Users
+|Company|Why JWT?|
+|:------|:-------|
+|Auth0|Authentication service (JWT-based)|
+|Firebase|Mobile/web auth (JWT tokens)|
+|Stripe|API authentication|
+|GitHub API|OAuth flow uses JWT|
+|Microservices|Stateless auth across services|
