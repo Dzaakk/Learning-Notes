@@ -11,7 +11,7 @@ Cookies, Sessions & Authentication
 
 ### Analogy
 Imagine going to a theme park:
-- **No memory system**: You buy a ticket, enter. Next ride, guard asks for ticket again (you already thew it away!).
+- **No memory system**: You buy a ticket, enter. Next ride, guard asks for ticket again (you already threw it away!).
 - **With memory (wristband)**: You get a wristband at entrance. Show it at every ride -> guard knows you paid.
 
 **Wristband = Cookie/Token** 
@@ -100,6 +100,7 @@ A **session** is server-side storage that remembers user state.
 ### Real-World Session Example (E-commerce)
 ```javaScript
 {
+  // Server-side session (Redis)
   session_id: "xyz789",
   user: {
     id: 123,
@@ -217,7 +218,7 @@ HMACSHA256(
 
 ## OAuth 2.0 (Third-Party Login)
 
-**OAuth** lets user log in with Google/Facebook/GitHub without sharing passwords.
+**OAuth** lets users log in with Google/Facebook/GitHub without sharing passwords.
 
 ### Analogy
 You want to print photos at a shop:
@@ -241,7 +242,7 @@ You want to print photos at a shop:
 ### Real-World OAuth Examples
 |App|OAuth Provider|What Access?|
 |:--|:------------|:-----------|
-|Spotify|Login with Facebook|Name, email, friend list|
+|Airbnb|Login with Facebook|Name, email, profile picture|
 |Canva|Login with Google|Email, Profile picture|
 |Medium|Login with Twitter|Username, email|
 |Netlify|Login with GitHub|Repo access (for deployment)|
@@ -250,7 +251,7 @@ You want to print photos at a shop:
 |Pros|Cons|
 |:---|:---|
 |User doesn't create new password|Dependency on third-party|
-|Less friction (quick signup)|Privacy concernc (data shared)|
+|Less friction (quick signup)|Privacy concerns (data shared)|
 |Secure (Google handles auth)|Complexity to implement|
 |Social features (import firends)|User locked out if provider down|
 
@@ -300,7 +301,7 @@ Authentication: JWT + Refresh Token
 - Expired JWT? Use refresh token to get new one
 
 Why?\
-✅ Stateless (sclaes easily)\
+✅ Stateless (scales easily)\
 ✅ Works offline (JWT has all info)\
 ✅ Can revoke refresh tokens (security)
 
@@ -319,18 +320,18 @@ Why?\
 |Method|Storage|Scalability|Security|Use Case|
 |:-----|:------|:----------|:-------|:-------|
 |Cookie + Session|Server|Medium (needs Redis)|✅ High|Traditional web
-|JWT|Client|✅ High (stateless)|Medium|APIs, SPAs|
+|JWT|Client|✅ High (stateless)|⚠️Medium|APIs, SPAs|
 |OAuth|Third-party|✅High|✅High|Social login|
 |Hybrid (JWT + Refresh)|Both|✅High|✅High|Production apps|
 
 
 ## Key Takeaways
 
-### 1. HTTP is stateless -> Need cookies(token) to remember users
-### 2. Cookies -> Browser storage (4kb limit, auto-sent)
-### 3. Sessions -> Server storage (secure, revocable)
-### 4. JWT -> Self-contained token (scalable, stateless)
-### 5. OAuth -> Third-party login (Google, Facebook)
-### 6. Always secrue cookies: HttpOnly + Secure | SameSite
-### 7. Production apps -> use hybrid approach (JWT + refresh tokens)
-### 8. Security first: Prevent XSS, CSRF, session hijacking
+1. **HTTP is stateless** -> Need cookies(token) to remember users
+2. **Cookies** -> Browser storage (4kb limit, auto-sent)
+3. **Sessions** -> Server storage (secure, revocable)
+4. **JWT** -> Self-contained token (scalable, stateless)
+5. **OAuth** -> Third-party login (Google, Facebook)
+6. **Always secrue cookies**: HttpOnly + Secure + SameSite
+7. **Production apps** -> use hybrid approach (JWT + refresh tokens)
+8. **Security first**: Prevent XSS, CSRF, session hijacking
