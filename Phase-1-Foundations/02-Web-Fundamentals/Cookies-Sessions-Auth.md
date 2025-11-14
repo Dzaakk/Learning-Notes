@@ -239,7 +239,7 @@ You want to print photos at a shop:
 |Resource Server|Stores user data|Google's servers|
 
 ### Real-World OAuth Examples
-|App|OAuthProvider|What Access?|
+|App|OAuth Provider|What Access?|
 |:--|:------------|:-----------|
 |Spotify|Login with Facebook|Name, email, friend list|
 |Canva|Login with Google|Email, Profile picture|
@@ -253,3 +253,84 @@ You want to print photos at a shop:
 |Less friction (quick signup)|Privacy concernc (data shared)|
 |Secure (Google handles auth)|Complexity to implement|
 |Social features (import firends)|User locked out if provider down|
+
+## Common Authentication Patterns
+
+### Pattern 1: Session-Based (Traditional)
+![session-based](./images/session-based.excalidraw.png)
+
+### Pattern 2: JWT-Based (Modern APIs)
+![jwt-based](./images/jwt-based.excalidraw.png)
+
+### Pattern 3: Hybrid (Best of Both)
+![hybrid](./images/hybrid.excalidraw.png)
+
+## Security Best Practices (Critical!)
+
+### 1. XSS (Cross-Site Scripting)
+![xss](./images/xss.excalidraw.png)
+
+### 2. CSRF (Cross-Site Request Forgery)
+![csrf](./images/csrf.excalidraw.png)
+
+### 3. Session Hijacking
+![session-hijacking](./images/session-hijacking.excalidraw.png)
+
+## Engineering Decision Tree
+![engineering-decision-tree](./images/engineering-decision-tree.excalidraw.png)
+
+## Real-World Architecture Examples
+
+### Example 1: E-Commerce (Amazon-style)
+Authentication: Session + Cookie
+- User logs in -> session_id in HttpOnly cookie
+- Session stored in Redis (shared across servers)
+- Shopping cart tied to session
+- 30-day persistent cookie (remember me)
+
+Why?\
+✅ Easy to invalidate (logout works instantly)\
+✅ Cart persists even if not logged in\
+✅ Server controls everything
+
+### Example 2: Mobile App (Instagram-style)
+Authentication: JWT + Refresh Token
+- Login -> Short JWT (15 min) + Refresh token (30 days)
+- Mobile app stores tokens securely
+- Expired JWT? Use refresh token to get new one
+
+Why?\
+✅ Stateless (sclaes easily)\
+✅ Works offline (JWT has all info)\
+✅ Can revoke refresh tokens (security)
+
+### Example 3: Microservices (Netflix-style)
+Authentication: JWT
+- API Gateway validates JWT
+- Microservices trust JWT (no DB lookup)
+- User info embedded in JWT payload
+
+Why?\
+✅ No shared session store needed\
+✅ Each service can read user info \
+✅  Scales horizontally 
+
+### Summary 
+|Method|Storage|Scalability|Security|Use Case|
+|:-----|:------|:----------|:-------|:-------|
+|Cookie + Session|Server|Medium (needs Redis)|✅ High|Traditional web
+|JWT|Client|✅ High (stateless)|Medium|APIs, SPAs|
+|OAuth|Third-party|✅High|✅High|Social login|
+|Hybrid (JWT + Refresh)|Both|✅High|✅High|Production apps|
+
+
+## Key Takeaways
+
+### 1. HTTP is stateless -> Need cookies(token) to remember users
+### 2. Cookies -> Browser storage (4kb limit, auto-sent)
+### 3. Sessions -> Server storage (secure, revocable)
+### 4. JWT -> Self-contained token (scalable, stateless)
+### 5. OAuth -> Third-party login (Google, Facebook)
+### 6. Always secrue cookies: HttpOnly + Secure | SameSite
+### 7. Production apps -> use hybrid approach (JWT + refresh tokens)
+### 8. Security first: Prevent XSS, CSRF, session hijacking
