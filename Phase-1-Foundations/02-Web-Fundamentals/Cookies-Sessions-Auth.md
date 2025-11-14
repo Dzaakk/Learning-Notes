@@ -214,3 +214,42 @@ HMACSHA256(
 |Stripe|API authentication|
 |GitHub API|OAuth flow uses JWT|
 |Microservices|Stateless auth across services|
+
+## OAuth 2.0 (Third-Party Login)
+
+**OAuth** lets user log in with Google/Facebook/GitHub without sharing passwords.
+
+### Analogy
+You want to print photos at a shop:
+- **Bad way**: Give shop your phone password (risky!).
+- **Good way (OAuth)**: Shop asks permission to access only photos (limited access).
+
+### OAuth Flow ("Sign in with Google")
+![oauth-flow](./images/oauth-flow.excalidraw.png)
+
+### Visual OAuth Flow
+![visual-oauth-flow](./images/visual-oauth-flow.excalidraw.png)
+
+### OAuth Roles
+|Role|Description|Example|
+|:---|:----------|:------|
+|Resource Owner|The User|You|
+|Client|App requesting access|Your website|
+|Authorization Server|Grants tokens|Google/Facebook|
+|Resource Server|Stores user data|Google's servers|
+
+### Real-World OAuth Examples
+|App|OAuthProvider|What Access?|
+|:--|:------------|:-----------|
+|Spotify|Login with Facebook|Name, email, friend list|
+|Canva|Login with Google|Email, Profile picture|
+|Medium|Login with Twitter|Username, email|
+|Netlify|Login with GitHub|Repo access (for deployment)|
+
+### OAuth Trade-offs
+|Pros|Cons|
+|:---|:---|
+|User doesn't create new password|Dependency on third-party|
+|Less friction (quick signup)|Privacy concernc (data shared)|
+|Secure (Google handles auth)|Complexity to implement|
+|Social features (import firends)|User locked out if provider down|
