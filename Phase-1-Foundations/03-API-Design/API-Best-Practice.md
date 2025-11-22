@@ -75,13 +75,13 @@ Just Right (v1, v2, v3 for major changes)
 └─ Cons: Requires planning
 
 ### Best Practices
-#### ✅ DO:
+#### ✅DO:
 - Version from day 1 (even if it's v1)
 - Use major versions only (v1, v2, not v1.2.3)
 - Deprecate old versions gradually (give 6-12 months)
 - Document breaking changes clearly
 
-❌ DON'T:
+#### ❌DON'T:
 - Remove versions without warning
 - Version every tiny change
 - Mix versioning strategies
@@ -215,3 +215,105 @@ Google search results:
 ✅ E-commerce product listings\
 ✅ Blog posts\
 ✅ User wants to see "Page 5"
+
+## Rate Limiting (Preventing Abuse)
+**Problem**: A malicious user sends 1 million requests/sec -> server crashes\
+**Solution**: Limit requests per user.
+
+### Analogy
+Free sample at supermarket:
+- "One free sample per customer"
+- If you come back 100 times, they say "Sorry, you already had one!"
+
+Rate limit = "100 requests per minute per user"
+
+### How Rate Limiting Works
+![rate-limit-flow](./images/rate-limit-process.excalidraw.png)
+
+### Rate Limit Response
+**Request:**
+```http
+Get /api/users HTTP/1.1
+Authorization: Bearer token123
+```
+**Response (if within limit):**
+```http
+HTTP/1.1 200 OK
+X-RateLimit-Limit: 1000 // Max Requests per hour
+X-RateLimit-Remaining: 999 // Requests left
+X-RateLimit-Reset: 164000000 // When limit resets (Unix timestamp)
+
+{"data": [...]}
+```
+**Response (if exceeded):**
+```http
+HTTP/1.1 429 Too Many Requests 
+X-RateLimit-Limit: 1000 
+X-RateLimit-Remaining: 0 
+X-RateLimit-Reset: 164000000 
+Retry-After: 3600 // Retry after 1 hour (seconds)
+
+{"error": "Rate limit exceeded. Try again in 1 hour."}
+```
+
+### Rate Limiting Algorithms
+1. Fixed Window
+
+    Every hour = new window
+
+    Window 1 (10:00 - 11:00): 1000 requests allowed\
+    Window 2 (11:00 - 12:00): 1000 requests allowed
+
+    **Problem**: Burst at window edge
+    - 10:59 -> 1000 requests
+    - 11:00 -> 1000 requests
+
+    = 2000 requests in 1 minute!
+
+2. Sliding Window (Better)
+    
+    Tracks last 60 minutes continuously
+    - At 10:30, checks requests from 9:30-10:30
+    - At 10:31, checks requests from 9:31-10:31
+
+    More accurate, prevents burst
+
+3. Token Bucket (Most Common)
+
+    Bucket starts with 1000 tokens
+    - Each request = token
+    - Tokens refill at constant rate (10 tokens/minute)
+    - If bucket empty -> rate limited
+
+    Allows short bursts, smooth over time
+
+### Real-World Rate Limits
+|API|Free Tier|Paid Tier|Per|
+|:--|:--------|:--------|:--|
+|Twitter|15 requests|450 requests|15 min|
+|GitHub|60 requests|5000 requests|hour|
+|Stripe|100 requests|No limit (per account)|second|
+|Google Maps|40,000 requests|Custom|month|
+
+### Rate Limiting Trade-offs
+|Approach|Pros|Cons|
+|-|-|-|
+|IP-based|Simple|Shared IPs (company networks)|
+|User-based|Accurate|Requires authentication|
+|API Key-based|Tracks per app|Users can create multiple keys|
+|No rate limit|User-friendly|Abuse, DDoS risk💥|
+
+### Best Practices
+#### ✅DO:
+- Return clear error messages
+- Include Retry-After header
+- Document limits clearly
+- Use 429 status code
+- Different limits for different endpoints\
+(GET /users -> 1000/hour, POST /users -> 100/hour)
+
+#### ❌DON'T:
+- Return 403 or 500 (use 429)
+- Hide rate limit info
+- Make limits too strict (frustrates users)
+- Apply same limit to all endpoints
