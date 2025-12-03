@@ -79,7 +79,7 @@ Wait for at least 1 follower, rest async
 ✅Simple to understand and implement\
 ✅Easy to scale reads (add more followers)\
 ✅Consistent writes (single source of truth)\
-✅Built-ain to most databases
+✅Built-in to most databases
 
 #### Disadvantages
 ❌Single point of failure for writes\
@@ -129,14 +129,14 @@ Combine both changes if possible → Example: Shopping cart (merge items)
 ### Pro & Cons of Multi-Leader
 #### Advantages:
 ✅ Better performance for globally distributed writes\
-✅ Can write to nearest leader (low latency)
-✅ Resilient to datacenter failures
+✅ Can write to nearest leader (low latency)\
+✅ Resilient to datacenter failures\
 ✅ Better write scalability
 
 #### Disadvantages
-❌ Complex conflict resolution
-❌ Eventual consistency (writes take time to propagate)
-❌ Data conflicts can occur
+❌ Complex conflict resolution\
+❌ Eventual consistency (writes take time to propagate)\
+❌ Data conflicts can occur\
 ❌ Harder to reason about
 
 ### Use Cases:
@@ -242,3 +242,221 @@ Request 2 → Follower B (lagging) →  Comment dissapears!
 - Sticky sessions (same user → same replica)
 - Read from leader for critical data
 - Timestamp-based routing
+
+### 3. Consistent Prefix Reads
+Question: "What is 2+2?"\
+Answer: "4"
+
+User sees:\
+Answer: "4" (from fast follower)\
+Question: ?? (from slow follower, not yet replicated)
+
+#### Solution:
+- Write related data to same partition
+- Use transactions
+- Timestamp ordering
+
+# Handling Replication Failures
+
+## Leader Failure (Failover)
+
+### Process:
+1. **Detect failure** (heartbeat timeout, typically 30s)
+2. **Choose new leader** (usually most up-to-date follower)
+3. **Reconfigure system** (client redirect to new leader)
+4. **Sync old leader** (if it comes back, make it follower)
+
+### Challenges:
+
+#### a) Split Brain
+Network partition → Both nodes think they're leader → Data divergence, conflicts\
+**Solutions:** Use consensus algorithms (Raft, Paxos)
+
+#### b) Data Loss
+Leader fails before replicating recent writes → Those writes are lost\
+**Solutions:** Synchronous replication for critical data
+
+#### c) Choosing New Leader
+Which follower should be leader?\
+→ Most up-to-date data\
+→ Lowest latenc\
+→ Manual selection
+
+## Follower Failure
+
+### Recovery Process:
+1. Follower crashes or disconnects
+2. Keeps track of last processed log position
+3. Reconnects and requests missing changes
+4. Catches up and resumes normal operation
+
+**This is usually straightforward and automatic**
+
+# Replication in Different Databases
+
+## MySQL Replication
+### Setup:
+```sql
+-- On Leader
+CREATE USER 'replicator'@'%' IDENTIFIED BY 'password';
+GRANT REPLICATION SLAVE ON *.* TO 'replicator'@'%';
+
+-- On Follower
+CHANGE MASTER TO
+  MASTER_HOST='leader-host',
+  MASTER_USER='replicator',
+  MASTER_PASSWORD='password';
+START SLAVE;
+```
+
+### Types:
+- Statement-based (replicate SQL statements)
+- Row-based (replicate actual data changes)
+- Mixed (automatic choice)
+
+
+## PostgreSQL Replication
+### Streaming Replication (default):
+```bash
+# On Follower
+pg_basebackup -h leader -D /var/lib/postgresql/data -U replicator -P
+
+# Configure standby
+standby_mode = 'on'
+primary_conninfo = 'host=leader port=5432 user=replicator'
+```
+
+### Types:
+- Physical replication (binary WAL shpping)
+- Logical replication (table-level, selective)
+
+## MongoDB Replica Set
+### Setup:
+```javascript
+rs.initiate({
+  _id: "myReplicaSet",
+  members: [
+    { _id: 0, host: "mongodb1:27017" },
+    { _id: 1, host: "mongodb2:27017" },
+    { _id: 2, host: "mongodb3:27017" }
+  ]
+})
+```
+
+### Features:
+- Automatic failover
+- Read preferences (primary, secondary, nearest)
+- Write concenr levels
+
+# Real-World Replication Architectures
+
+## Example 1: Instagram (Read-Heavy)
+Primary PostgreSQL (writes)\
+├── Replica 1 (timeline reads)\
+├── Replica 2 (feed reads)\
+├── Replica 3 (search)\
+└── Replica 4 (analytics)
+
+replication: Asynchronous\
+Lag: < 1 second acceptable
+
+## Example 2: Netflix (Global)
+US Datacenter
+├── Leader (writes)
+└── Local followers (reads)
+
+EU Datacenter
+├── Leader (writes)
+└── Local followers (reads)
+
+Multi-leader replication between datacenters
+
+## Example 3: E-commerce Checkout
+Primary DB (orders, payments)\
+└── Synchronous replica (backup)
+
+Product Catalog DB\
+├── Primary\
+└── Multiple async replicas (for high read traffic)
+
+Inventory DB\
+├── Primary (strict consistency)\
+└── Sync replica (cannot oversell)
+
+# Replication Best Practices
+
+## 1. Monitor Replication Lag
+```sql
+-- PostgreSQL
+SELECT now() - pg_last_xact_replay_timestamp() AS replication_lag;
+
+-- MySQL
+SHOW SLAVE STATUS\G
+```
+**Alert if lag > threshold (e.g., 5 seconds)**
+
+## 2. Use Connection Pooling
+Application → Connection Pool → Primary/Replicas
+
+Benefits:
+- Reuse connections
+- Route reads to replicas
+- Handle failover
+
+## 3. Implement Health Checks
+```python
+def check_replica_health(replica):
+    lag = get_replication_lag(replica)
+    if lag > MAX_LAG_SECONDS:
+        remove_from_pool(replica)
+        alert_ops_team()
+```
+
+## 4. Plan for Failover
+- Automate detection (heartbeat monitoring)
+- Test failover regularly (chaos engineering)
+- Document failover procedures
+- Use orchestration tools (Patroni for PostgreSQL)
+
+## 5. Secure Replication Traffic
+- Use SSL/TLS for replication
+- Authentiacate replication users
+- Restrict replication to private network
+- Encrypt sensitive data at resta
+
+# Commong Replica Mistakes
+## ❌Mistake 1: Reading from Replicas Blindly
+```python
+# Bad: May read stale data
+user.update_profile()
+profile = read_from_random_replica()  # Might be old data
+```
+**Fix:** Read-after-write from primary or check lag
+
+## ❌Mistake 2: Not Handling Failover
+```python
+# Bad: Hardcoded primary host
+db.connect("primary-host:5432")
+```
+**Fix:** Use service discovery or connection pooler
+
+## ❌Mistake 3: Ignoring Replication Lag
+Write to primary → Read from replica (lagging) → Bug reports!
+
+**Fix:** Monitor lag, route critical reads to primary
+
+## ❌Mistake 4: Not Testing Failover
+"Our failover works in theory" → First real failure: Disaster
+
+**Fix:** Regular failover drills
+
+# Key Takeaways
+1. **Single-Leader:** Simple, works for most applications (default choice)
+2. **Multi-Leader:** Use for multi-datacenter, offline apps
+3. **Leaderless:** Use for high availability, eventual consistency OK
+4. **Replication Lag:** Always exists in async replication, handle it
+5. **Failover:** Plan and test regularly
+6. **Monitoring:** Track lag, health, and performance
+7. **Trafe-offs:** Consistency vs Availability vs Performance
+
+
