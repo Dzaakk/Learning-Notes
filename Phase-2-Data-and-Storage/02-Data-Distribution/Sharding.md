@@ -230,4 +230,207 @@ All other data stays put
 |Company C|2|
 |Company D|3|
 
-Large tenants can get didcated shards
+Large tenants can get dedicated shards
+
+# Sharding Key Selection
+**Critical Decision:** Choosing the right sharding key affects performance, scalability, and complexity
+
+## Good Sharding Keys
+### Characteristics:
+- High cardinality (many unique values)
+- Even distribution
+- Immutable (doesn't change)
+- Commonly used in queries
+
+### Examples:
+- **User ID** - Good for user-centric apps
+- **Tenant ID** - Good for SaaS multi-tenant
+- **Product ID** - Good for e-commerce
+- **Time-based ID** (with hash) - Good for logs/events
+
+## Bad Sharding Keys
+### Examples:
+#### 1. Low Cardinality:
+Country Code (only ~200 values)\
+→ Cannot create more than 200 shards\
+→ Uneven distribution (US has 300M users, Vatican has 800)
+
+#### 2. Timestamp Alone:
+created_at as shard key\
+→ All new data goes to one shard (hotspot)\
+→ Old shards sit idle
+
+#### 3. Mutable Fields:
+user.status (active/inactive)\
+→ If status changes, need to move data between shards
+
+#### 4. Sequential IDs Without Hashing:
+Auto-Increment ID\
+→ Latest data always on same shard (hotspot)
+
+# Handling Cross-Shard Queries
+## Problem: Data Spread Across Shards
+### Simple Query (Single Shard):
+```sql
+-- Easy: user_id is shard key
+SELECT * FROM users WHERE user_id = 12345;
+→ Direct to one shard
+```
+### Complex Query (Multiple Shards):
+```sql
+-- Hard: Need to check all shards
+SELECT * FROM users WHERE email = 'john@example.com';
+→ Query all 10 shards, merge results
+```
+
+## Solutions for Cross-Shard Queries
+### 1. Scatter-Gather
+**Process:**
+1. Send query to all shards
+2. Each shard returns results
+3. Application merges and returns
+
+**Example:**
+```python
+def search_users(email):
+    results = []
+    for shard in all_shards:
+        shard_results = shard.query("SELECT * FROM users WHERE email = ?", email)
+        results.extend(shard_results)
+    return results
+```
+**Pros:** Simple, works for any query\
+**Cons:** SLow (latency = slowest shard), expensive (all shards queried)
+
+### 2. Denormalization
+**Store duplicated data to avoid cross-shard queries**
+
+**Example:**\
+Users table (sharded by user_id)\
+Orders table (sharded by order_id)
+
+Problem: "Get all orders for user 123" requeries scatter-gather
+
+Solution: Duplicate orders in user's shard\
+Users table:
+- user_id (shard_key)
+- user_orders (denormalized list of orders)
+
+**Pros:** Fast queries\
+**Cons:** Data duplication, consistency challenges
+
+### 3. Service-Oriented Architecture
+**Split into microservices with dedicated databases**
+
+**Example:**\
+Users Service (sharded by user_id)\
+Orders Service (sharded by order_id)\
+Search Service (Elasticsearch - indexes from both)
+
+Query flow:
+1. search service maintains index
+2. Query Search Service for "user 123 orders"
+3. Returns order_ids
+4. Fetch details from Order Service
+
+### 4. Application-Level Joins
+**Fetch from multiple shards, join in application**
+
+**Example:**
+```python
+# Get user from User Service
+user = user_service.get(user_id=123)
+
+# Get orders from Order Service using user_id
+orders = order_service.get_by_user(user_id=123)
+
+# Join in application
+user.orders = orders
+return user
+```
+**Pros:** Flexible
+**Cons:** More application complexity, multiple round trips
+
+# Challenges and Solutions
+## Challenge 1: Uneven Data Distribution (Hotspots)
+### Problem:
+Shard 1: 10GB, 1000 QPS
+Shard 2: 50GB, 10,000 QPS (celebrity user)
+Shard 3: 10GB, 1000 QPS
+
+### Solutions:
+#### a) Better Sharding Key
+Instead of: user_id\
+Use: hash(user_id) for even distribution
+
+#### b) Further Shard Hot Partitions
+Split Shard 2 into Shard 2a and 2b
+
+#### c) Dedicated Shards for Hot Data
+Celebrity users → Dedicated shrad with more resources
+
+## Challenge 2: Resharding
+### Problem:
+Started with 4 shards\
+Now need 8 shards\
+→ Need to move ~50% of data
+
+### Solutions:
+#### a) Plan Ahead
+Start with more shards than needed\
+Use virtual shards (e.g., 256) mapped to physical shards (e.g., 4)
+
+#### b) Use Consistent Hashing
+Only ~1/n data moves when adding nth shard
+
+#### c) Double Writes During Migration
+1. Write to old shard
+2. Write to new shard
+3. Migrate existing data
+4. Switch reads to new shard
+5. Drop old shard
+
+## Challenge 3: Distributed Transactions
+### Problem:
+Transfer money: User A (Shard 1) → User B (Shard 2)\
+Need atomicity across shards
+
+### Solutions:
+#### a) Avoid Cross-Shard Transactions
+Shard by something that keeps related data together\
+e.g., Both users in same account → same shard
+
+#### b) Two-Phase Commit (2PC)
+Coordinator asks all shards: "Can you commit?"\
+If all say yes → Coordinator: "Commit!"\
+If all say no → Coordinator: "Abort!"
+
+**Cons:** Slow, coordinator is bottleneck, blocking
+
+#### c) Saga Pattern
+Local transactions + compensating actions
+1. Deduct from user A (Shard 1)
+2. Add to User B (Shard 2)
+3. If step 2 fails → Compensate: Refund User A
+
+## Challenge 4: Auto-Incrementing IDs
+### Problem:
+Multiple shards generating IDs → Collisions!
+
+### Solutions:
+#### a) UUID/GUID
+Globally unique, no coordination needed\
+Cons: Large (128-bit), not sequential
+
+#### b) Snowflake ID (Twitter)
+64-bit ID:
+- Timestamp (41 bits)
+- Shard ID (10 bits)
+- Sequence (12 bits)
+
+Pros: Time-ordere, unique, efficient
+
+#### c) Database Sequence with Offset
+Shard 1: 1, 4, 7, 10, 13... (start 1, increment 3)\
+Shard 2: 2, 5, 8, 11, 14... (start 2, increment 3)\
+Shard 3: 3, 6, 9, 12, 15... (start 3, increment 3)
