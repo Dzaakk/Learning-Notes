@@ -64,15 +64,15 @@ Shard 3: user_id 2,000,001 - 3,000,0000\
 Shard 4: user_id 3,000,001 - 4,000,0000
 
 ### Example: Timestamps
-Shard 1: 2022-01-01 to 2022-12-31
-Shard 2: 2023-01-01 to 2023-12-31
-Shard 3: 2024-01-01 to 2024-12-31
+Shard 1: 2022-01-01 to 2022-12-31\
+Shard 2: 2023-01-01 to 2023-12-31\
+Shard 3: 2024-01-01 to 2024-12-31\
 Shard 4: 2025-01-01 to 2025-12-31
 
 ### Example: Geographic
-Shard 1: Users A-F (by last name)
-Shard 2: Users G-M
-Shard 3: Users N-S
+Shard 1: Users A-F (by last name)\
+Shard 2: Users G-M\
+Shard 3: Users N-S\
 Shard 4: Users T-Z
 
 ### Pros & Cons of Range-Based Sharding
@@ -83,7 +83,7 @@ Shard 4: Users T-Z
 ✅ Natural for time-series data
 #### Disadvantages:
 ❌ Uneven data distribution (hotspots)\
-❌ Popular rangesd overloaded
+❌ Popular ranges overloaded\
 ❌ Requires rebalancing as data grows
 
 ### Use Cases:
@@ -108,12 +108,12 @@ hash(12345) = 98765432\
 → Store in Shard 0
 
 ### Distribution:
-hash(user_id) % 4:\
+hash(user_id) % 4:
 
-User 1001 → Shard 1
-User 1002 → Shard 2 
-User 1003 → Shard 3 
-User 1004 → Shard 0 
+User 1001 → Shard 1\
+User 1002 → Shard 2\
+User 1003 → Shard 3\
+User 1004 → Shard 0\
 User 1005 → Shard 1
 
 ### Pros & Cons of Hash-Based Sharding
@@ -146,10 +146,10 @@ hash(user_id) % 5 = different shard!
 **Concept:** Minimize data movement when adding/removing shards
 
 ### How It Works:
-Hash Ring(0 to 2^32):
+Hash Ring (0 to 2^32):
 
-Shard A: position 100
-Shard B: position 500
+Shard A: position 100\
+Shard B: position 500\
 Shard C: position 900
 
 User 1234 → hash = 250 →  goes to Shard B (next clockwise)\
@@ -177,7 +177,7 @@ All other data stays put
 ### Use Cases:
 - Distributed caches (Redis, Memcached)
 - Distributed databases (Cassandra, DynamoDB)
-- Conten delivery networks
+- Content delivery networks
 
 ### Popular Implementation:
 - Amazon DynamoDB
@@ -348,14 +348,14 @@ orders = order_service.get_by_user(user_id=123)
 user.orders = orders
 return user
 ```
-**Pros:** Flexible
+**Pros:** Flexible\
 **Cons:** More application complexity, multiple round trips
 
 # Challenges and Solutions
 ## Challenge 1: Uneven Data Distribution (Hotspots)
 ### Problem:
-Shard 1: 10GB, 1000 QPS
-Shard 2: 50GB, 10,000 QPS (celebrity user)
+Shard 1: 10GB, 1000 QPS\
+Shard 2: 50GB, 10,000 QPS (celebrity user)\
 Shard 3: 10GB, 1000 QPS
 
 ### Solutions:
@@ -367,7 +367,7 @@ Use: hash(user_id) for even distribution
 Split Shard 2 into Shard 2a and 2b
 
 #### c) Dedicated Shards for Hot Data
-Celebrity users → Dedicated shrad with more resources
+Celebrity users → Dedicated shard with more resources
 
 ## Challenge 2: Resharding
 ### Problem:
@@ -428,7 +428,7 @@ Cons: Large (128-bit), not sequential
 - Shard ID (10 bits)
 - Sequence (12 bits)
 
-Pros: Time-ordere, unique, efficient
+Pros: Time-order, unique, efficient
 
 #### c) Database Sequence with Offset
 Shard 1: 1, 4, 7, 10, 13... (start 1, increment 3)\
@@ -502,7 +502,7 @@ Frequently joining across shards\
 → Performance nightmare
 
 ## ❌ Anti-Pattern 4: Ignoring Hotspots
-One shard gettinbg 80% of traffic\
+One shard getting 80% of traffic\
 → Defeats purpose of sharding
 
 # Key Takeaways
