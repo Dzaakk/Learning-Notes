@@ -434,3 +434,82 @@ Pros: Time-ordere, unique, efficient
 Shard 1: 1, 4, 7, 10, 13... (start 1, increment 3)\
 Shard 2: 2, 5, 8, 11, 14... (start 2, increment 3)\
 Shard 3: 3, 6, 9, 12, 15... (start 3, increment 3)
+
+# Real-World Sharding Examples
+
+## Instagram
+### Sharding Strategy:
+- Sharded by user_id (logical shards: 1000s)
+- PostgreSQL (multiple shards)
+- Stored photos: Sharded by photo_id
+
+### Architecture:
+![instagram architecture](./images/instagram-architecture.excalidraw.png)
+
+## Uber
+### Sharding Strategy:
+- Trips sharded by city_id
+- Users sharded by user_id
+- Lookup service for city → shard mapping
+
+### Reasoning:
+- Most queries are city-specific
+- Keeps related data (trips in same city) together
+
+## Discord
+### Sharding Strategy:
+- Messages sharded by (channel_id, message_id)
+- Cassandra for horizontal scaling
+- Consistent hashing
+
+### Reasoning:
+- Channel messages always together
+- Easy to scale per-channel
+
+# Sharding Checklist
+## Before Sharding:
+1. **Optimize First**
+    - Added indexes
+    - Optimized queries
+    - Used caching
+    - Tried read replicas
+2. **Plan Sharding Key**
+    - High cardinality
+    - Even distribution
+    - Immutable
+    - Matches query patterns
+3. **Application Changes**
+    - Shard-aware routing
+    - Handle cross-shard queries
+    - Distributed ID generation
+    - Monitoring per shard
+4. **Operational Readiness**
+    - Backup strategy per shard
+    - Monitoring and alerting
+    - Resharding plan
+    - Team training
+
+# Sharding Anti-Patterns
+## ❌ Anti-Pattern 1: Premature Sharding
+"We migh need to scale in the future"\
+→ Adds complexity too early
+
+## ❌ Anti-Pattern 2: Wrong Sharding Key
+Shard by timestamp → All new data on one shard
+
+## ❌ Anti-Pattern 3: Cross-Shard Joins
+Frequently joining across shards\
+→ Performance nightmare
+
+## ❌ Anti-Pattern 4: Ignoring Hotspots
+One shard gettinbg 80% of traffic\
+→ Defeats purpose of sharding
+
+# Key Takeaways
+1. **Delay Sharding:** Optimize and use replicas first
+2. **Choose Key Wisely:** Shard key is most critical decision
+3. **Even Distribution:** Avoid hotspots
+4. **Avoid Cross-Shard:** Design to minimize cross-shard queries
+5. **Plan for Growth:** Start with more logical shards than physical
+6. **Monitoring:** Track per-shard metrics
+7. **Complexity:** Sharding adds significant operational overhead
