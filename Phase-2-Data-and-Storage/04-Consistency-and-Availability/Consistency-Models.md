@@ -66,3 +66,41 @@ Consistency Models
 - Consensus algorithm (Raft, Paxos)
 - Synchronous replication with quorums
 - Distributed transactions (2PC, 3PC)
+
+## 2. Sequential Consistency
+
+**Definition:** Operations appear to execute in some sequential order, but not necessarily real-time order
+
+**Guarantee:** All nodes see operations in the same order, but order may differ from real-time
+
+### Characteristics:
+- Global total order of operations
+- Order must be consistent across al nodes
+- But order can differ from actual execution time
+
+### Example:
+![sequential example](./images/sequential-example.excalidraw.png)
+
+### Difference from Linearizability:
+![linearizability vs sequential](./images/linearizability-vs-sequential.excalidraw.png)
+
+### Pros & Cons:
+**Advantages:**\
+✅ Easier to implement than linearizability\
+✅ Better performance (no strict time ordering)\
+✅ Still relatively simple to reason about
+
+**Disadvantages:**\
+❌ Can be confusing (operations reordered)\
+❌ Still requires coordination\
+❌ Not as intuitive as linearizability
+
+### Use Cases:
+- Systems where order matters but timing doesn't
+- Replicated state machinse
+- Some database replication
+
+### Examples:
+- Some configurations of distributed databases
+- Certain memory models in multiprocessor systems
+
