@@ -619,3 +619,85 @@ func getPopularItems() []string {
 
 **Fix:** Async processing, message queues, eventual consistency
 
+# Real-World Examples
+
+## Example 1: Netflix
+**Availability:** 99.99%
+
+**Strategies:**
+- Multi-region active-active
+- Chaos engineering (Chaos Monkey)
+- Circuit breakers (Hystrix)
+- Bulkheads (isolated thread pools)
+- Graceful degradation
+
+## Example 2: AWS
+**Availability:** 99.99% (per region)
+
+**Strategies:**
+- Multiple availability zones
+- Cross-region replication
+- Health checks every few seconds
+- Auto-scaling
+- Load balancing
+
+## Example 3: Google Search
+**Availability:** 99.999%+ 
+
+**Strategies:**
+- Globally distributed
+- Massive redundancy
+- Instant failover
+- Predictive replacement
+- Multiple layers of caching
+
+# Cost vs Availability
+
+## Trade-offs:
+|Nines|Downtime/Year|Relative Cost|Suitable For|
+|-|-|-|-|
+|99%|3.65 days|1x (baseline)|Internal tools
+|99.9%|8.76 hours|2-3x|Most Saas
+|99.99%|52 minutes|5-10x|Business-critical
+|99.999%|5 minutes|20-50x|Financial systems
+
+**Each additional nine costs ~3-5x more**
+
+## Where to Invest:
+**High ROI:**
+- Automated failover
+- Health checks
+- Basic redundancy (active-passive)
+- Monitoring and alerting
+
+**Medium ROI:**
+- Multi-region deployment
+- Active-active setup
+- Advanced monitoring
+
+**Low ROI (unless critical):**
+- Six nines availability
+- Custom hardware
+- Dedicated network infrastructure
+
+# Key Takeaways
+1. **Availability is expensive:** Each nine costs exponentially more
+2. **Redundancy is key:** Eleminate single points of failure
+3. **Measure everything:** MTBF and MTTR are critical metrics
+4. **Design for failure:** Assume everything will fail
+5. **Practice recovery:** Regular failure drills improve MTTR
+6. **Set realistic SLOs:** Balance cost and customer needs
+7. **Automate recovery:** Human intervention is slow
+8. **Monitor proactively:** Catch issues before they become outages
+
+## Quick Decision Guide:
+- Internal tools: 99% (2 nines)
+- Standard SaaS: 99.9% (3 nines)
+- Business-critical: 99.99% (4 nines)
+- Financial/health: 99.999% (5 nines)
+
+## Remember:
+- Perfect availability (100%) is impossible and infinitely expensive
+- Focus on MTTR as much as MTBF (recover fast)
+- Availability is a business decision, not just technical
+- Test your assumptions with real failure scenarios 
