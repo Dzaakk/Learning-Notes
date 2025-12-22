@@ -14,6 +14,69 @@ Data Warehouse
 ## Architecture Flow:
 ![data warehouse flow](./images/data-warehouse-flow.png)
 
+# Data Warehouse Architecture Layers
+
+## 1. Staging Layer
+**Purpose:** Temporary landing zone fro raw data from source systems
+
+### Characteristics:
+- Data stored in original source format
+- Exact copy of source data
+- Minimal transformation
+- Used for data quality checks
+- Typically truncated after ETL completes
+
+### Example:
+```sql
+-- Staging table
+CREATE TABLE staging_orders (
+    order_id INT,
+    customer_id INT,
+    order_date DATE,
+    amount DECIMAL,
+    -- Loaded as-is from source
+);
+```
+
+## 2. Integratiion/ODS Layer (Optional)
+**ODS = Operational Data Store**
+
+**Purpose:** Support operational reporting with current or near real-time data
+
+### Characteristics:
+- Time-sensitive business data for current operations
+- Subject-oriented (by business area)
+- Support tactical decisions
+- Usually normalized (3NF schema)
+- Bridge between OLTP and warehouse
+
+**Use Case:** "What happened in the last hour?" - operational queries
+
+### Difference from Warehouse:
+- ODS: Current/recent data, data overwritten and changes frequently
+- Warehouse: Historical data, static data for archiving and historical analysis
+
+## 3. Data Warehouse Layer
+**Purpose:** Historical, integrated data optimized for analysis
+
+### Characteristics:
+- Star/Snowflake schema
+- Slowly Changing Dimensions (SCD)
+- Time-variant data
+- Non-volatile (historical records preserved)
+
+## 4. Data Mart Layer
+**Purpose:** Subset of warehouse focused on specific business function or department
+
+### Example:
+![data mart layer](./images/data-mart-layer.png)
+
+### Benefits:
+- Faster queries on smaller datasets optimized for specific needs
+- Department-specific schemas
+- Security/access control by department
+- Cost-effective with less storage and computational power
+
 # Data Warehouse Schema Design
 
 ## 1. Star Schema (Most Common)
