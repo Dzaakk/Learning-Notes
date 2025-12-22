@@ -353,6 +353,78 @@ SELECT * FROM monthly_sales WHERE month = '2024-12-01';
 - Extra storage
 - Need refresh strategy (daily, hour, on-demand)
 
+## 3. Indexing
+
+### Common indexes in warehouse:
+**Bitmap indexes** (low cardinality columns);
+```sql
+CREATE BITMAP INDEX idx_gender ON customers(gender);
+-- Good for: gender, status, category (few distinct values)
+```
+
+**B-tree indexes** (high cardinality):
+```sql
+CREATE INDEX idx_customer_id ON sales(customer_id);
+-- Good for: IDs, dates, foreign keys
+```
+
+## 4. Compression
+**Column storage + compression = huge savings**
+
+### Example compression ratios:
+- Integer columns: 10:1 to 20:1
+- String columns: 5:1 to 10:1
+- Date columns: 15:1 to 30:1
+
+### Benefits:
+- Less storage costs
+- Faster I/O (less data to read)
+- More data fits in memory
+
+## 5. Short Keys / Clustering
+**Concept:** Physical ordering of data on disk
+
+### Example (Redshift):
+```sql
+CREATE TABLE sales (
+    sale_date DATE,
+    customer_id INT,
+    amount DECIMAL
+) SORTKEY(sale_date);
+```
+
+### Benefits:
+- Range queries faster (data co-located)
+- Better compression (similar values together)
+- Partition pruning more effective
+
+## 6. Distribution Keys (MPP Systems)
+**Concept:** How data is distributed across nodes
+
+### Strategies:
+**Even Distribution**\
+Distribute rows evenly (round-robin)\
+**Use Case:** Small tables, no join patterns
+
+**Key Distribution**\
+Distribute by specific column\
+**Use Case:** Large fact tables, join optimization
+
+### Example:
+```sql
+-- Distribute both tables by customer_id
+CREATE TABLE orders DISTSTYLE KEY DISTKEY(customer_id);
+CREATE TABLE customers DISTSTYLE KEY DISTKEY(customer_id);
+
+-- Join executes locally on each node (no network shuffle)
+SELECT * FROM orders o
+JOIN customers c ON o.customer_id = c.customer_id;
+```
+
+### All Distribution
+Replicate entire table to all nodes\
+**Use Case:** Small dimension tables (< 1M rows)
+
 # Popular Data Warehouse Solutions
 
 ## 1. Amazon Redshift
@@ -403,6 +475,20 @@ SELECT * FROM monthly_sales WHERE month = '2024-12-01';
 - Good for batch processing
 
 **Use Case:** Large datasets, cost-sensitive, on-premise
+
+# Data Warehouse vs OLTP Database
+|Aspect|OLTP Database|Data Warehouse|
+|-|-|-|
+|**Purpose**|Day-to-day operations|Analysis, reporting
+|**Queries**|Simple, fast (ms)|Complex, slower (seconds)
+|**Users**|Many concurrent|Fewer, batch jobs
+|**Data Volume**|Current data|Historical data
+|**Schema**|Normalized (3NF)|Denormalized (star/snowflake)
+|**Updates**|Frequent INSERT/UPDATE/DELETE|Mostly INSERT (batch loads)
+|**Optimization**|Write-optimized|Read-optimized
+|**Storage**|Row-oriented|Column-oriented
+|**Example**|PostgreSQL, MySQL|Redshift, BigQuery, Snowflake
+
 
 # When to Use Data Warehouse
 
