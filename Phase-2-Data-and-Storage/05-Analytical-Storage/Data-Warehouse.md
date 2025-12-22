@@ -120,6 +120,154 @@ CREATE TABLE staging_orders (
 
 **Use Case:** Enterprise data warehouse with multiple business process
 
+# Slowly Changing Dimension (SCD)
+**Example:** Custoer moves to new address, product price changes
+
+## SCD Types:
+
+### Type 0: Retain Original
+Attributes never change, assigned to values described as 'Original'
+
+**Use Case:** Birth date, social security number, zip codes
+
+### Type 1: Overwrite
+Overwrites old with new data, does not track historical data
+
+**Example:**
+```sql
+-- Customer moves
+UPDATE dim_customer 
+SET address = '456 New St', city = 'Boston'
+WHERE customer_id = 123;
+
+-- Old address lost forever
+```
+
+**Pros:** Simple, less storage\
+**Cons:** No history tracking
+
+**Use Case:** Fix typos, unimportant attributes
+
+### Type 2: Add New Row (Most Common)
+Maintains history by creating new rows when data changes, with each record having timestamp or version number
+
+**Example:**
+```sql
+-- Customer record history
+customer_key | customer_id | address      | city    | valid_from | valid_to   | is_current
+-------------|-------------|--------------|---------|------------|------------|------------
+1            | 123         | 123 Old St   | NYC     | 2023-01-01 | 2024-06-30 | N
+2            | 123         | 456 New St   | Boston  | 2024-07-01 | 9999-12-31 | Y
+```
+
+**Pros:** Full history, point-int-time queries\
+**Cons:** More storage, more complex queries
+
+**Use Case:** Customer addresses, employee positions, product categories
+
+**Query for sepcific date:
+```sql
+-- Find customer info as of June 2024
+SELECT * FROM dim_customer
+WHERE customer_id = 123
+  AND '2024-06-15' BETWEEN valid_from AND valid_to;
+```
+
+### Type 3: Add New Column
+Tracks changes using separate columns, preserves limited history with new attributes
+
+**Example:**
+```sql
+customer_id | current_address | previous_address | address_change_date
+------------|-----------------|------------------|--------------------
+123         | 456 New St      | 123 Old St       | 2024-07-01
+```
+
+**Pros:** Simple queries, fixed storage\
+**Cons:** Limited history (only previous value)
+
+**Use Case:** Track one previous value (previous job title, previous status)
+
+### Type 4: Add History Table
+Current data in main table, full history in separate table
+
+**Example:**
+```sql
+-- dim_customer (current only)
+customer_id | address      | city    | updated_at
+------------|--------------|---------|------------
+123         | 456 New St   | Boston  | 2024-07-01
+
+-- dim_customer_history (all changes)
+history_id | customer_id | address      | city    | change_date
+-----------|-------------|--------------|---------|-------------
+1          | 123         | 123 Old St   | NYC     | 2023-01-01
+2          | 123         | 456 New St   | Boston  | 2024-07-01
+```
+
+**Pros:** Clean current view, unlimited history\
+**Cons:** Requires joins for historical queries
+
+**Use Case:** Large dimensions with frequent changes
+
+# Fact Table Types
+
+## 1. Transaction Fact Table
+**Granularity:** One row per transaction/event
+
+### Example: Sales transactions
+```sql
+sale_id | date_key | product_key | customer_key | quantity | amount
+--------|----------|-------------|--------------|----------|--------
+1       | 20241220 | 501         | 1001         | 2        | 50.00
+2       | 20241220 | 502         | 1002         | 1        | 25.00
+```
+
+### Characteristics:
+- Most detailed (atomic level)
+- Sparse (empty cells common)
+- Large volume
+- Additive measures
+
+**Use Case:** Individual orders, clicks, logins
+
+## 2. Periodic Snapshot Fact Table
+**Granularity:** One row per period (day/week/month)
+
+### Example: Daily account balance
+```sql
+account_key | date_key | balance | transactions_count | total_deposits
+------------|----------|---------|-------------------|----------------
+1001        | 20241220 | 5000.00 | 3                 | 200.00
+1001        | 20241221 | 5100.00 | 2                 | 150.00
+```
+
+### Characteristics:
+- Regular time intervals
+- Dense (no gaps)
+- Include calculated values
+- Semi-additive measures (can't sum balance across time)
+
+**Use Case:** Inventory levels, account balances, website metrics
+
+## 3. Accumulating Snapshot Fact Table
+**Granularity:** One row per process/lifecycle, updated as process progress
+
+### Example: Order fulfillment pipeline
+```sql
+order_key | order_date_key | payment_date_key | ship_date_key | delivery_date_key | days_to_ship
+----------|----------------|------------------|---------------|-------------------|-------------
+101       | 20241201       | 20241201         | 20241203      | 20241205          | 2
+102       | 20241202       | 20241202         | NULL          | NULL              | NULL
+```
+## Characteristics:
+- Multiple date stamps (lifecycle stages)
+- Rows updated (not just inserted)
+- Tracks progress through pipeline
+- Lag calculations (days between stages)
+
+**Use Case:** Order processing, loan applications, support tickets
+
 # Column-Oriented Storage
 **Why Column Storage for Analytics?**
 
@@ -149,6 +297,61 @@ SELECT AVG(salary) FROM employees WHERE city = 'NYC';
 -- Row storage: reads entire rows (wasteful)
 -- Column storage: reads only 2 columns (efficient)
 ```
+# Data Warehouse Performance Optimization
+
+## 1. Partitioning
+**Strategy:** Split large tables into smaller, manageable pieces
+
+### Common partition keys:
+- Date/time (most common)
+- Geography (region, country)
+- Product category
+
+### Example:
+```sql
+-- Partition by month
+CREATE TABLE sales (
+    sale_id BIGINT,
+    sale_date DATE,
+    amount DECIMAL
+) PARTITION BY RANGE (sale_date) (
+    PARTITION p_2024_01 VALUES FROM ('2024-01-01') TO ('2024-02-01'),
+    PARTITION p_2024_02 VALUES FROM ('2024-02-01') TO ('2024-03-01'),
+    PARTITION p_2024_03 VALUES FROM ('2024-03-01') TO ('2024-04-01')
+);
+```
+
+### Benefits:
+- Query only relevant partitions (partition pruning)
+- Fasteer data loading
+- Easier maintenance (drop old partitions)
+
+## 2. Materialized Views
+**Concept:** Pre-computed query results stored as table
+
+### Example:
+```sql
+-- Expensive query computed once
+CREATE MATERIALIZED VIEW monthly_sales AS
+SELECT 
+    DATE_TRUNC('month', sale_date) as month,
+    product_category,
+    SUM(amount) as total_sales,
+    COUNT(*) as order_count
+FROM sales
+GROUP BY month, product_category;
+
+-- Fast queries on materialized view
+SELECT * FROM monthly_sales WHERE month = '2024-12-01';
+```
+
+### Benefits:
+- Extremely fast queries (pre-computed)
+- Reduce compute on warehouse
+
+### Trade-offs:
+- Extra storage
+- Need refresh strategy (daily, hour, on-demand)
 
 # Popular Data Warehouse Solutions
 
