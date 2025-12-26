@@ -94,3 +94,48 @@ Data Lake
 - Schema evolution
 - Unified batch and streaming
 
+# Data Lake Challenges
+
+## 1. Data Swamp Problem
+**Issue:** Unorganized data becomes unusable
+
+### Solutions:
+- Implement metadata catalog
+- Enforce naming conventions
+- Zone-based organization (bronze/silver/gold)
+- Data quality checks
+
+## 2. Performance Issues
+**Issue:** Querying raw data is slow
+
+### Solutions:
+- Partition data (by date, region, etc)
+- Use columnar formats (Parquet, ORC)
+- Create indexes/statistics
+- Cache frequently accessed data
+
+## 3. Security and Governance
+**Issue:** Sensitive data exposed
+
+### Solutions:
+- Fine-grained access control
+- Encryption at rest and in transit
+- Data masking
+- Audit logs
+
+# When to Use a Data Lake
+- Need to store diverse data types
+- Don't know future use cases
+- Machine learning/ data science
+- Real-time/streaming data
+- Need cheap storage
+- Exploratory analysis
+
+## Examples:
+- IoT sensor data
+- Application logs
+- Social media feeds
+- Image/video storage
+- ML training data
+
+
