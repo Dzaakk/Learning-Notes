@@ -7,38 +7,70 @@ Data Lake
 ## Key Characteristics:
 - **Stores raw data** (no pre-processing)
 - **Schema-on-read** (define schema when querying)
-- **Flexible** (any format: JSON, CSV, images, logs)
+- **Flexible** (any format: JSON, CSV, Parquet, images, logs)
 - **Scalable** (petabytes of data)
 - **Cost-effective** (cheap storage like s3)
+- **ELT approach** (Extract → Load → Transform)
 
 ## Architecture:
 ![data lake architecture](./images/data-lake-architecture.png)
 
 # Data Lake Zones (Medallion Architecture)
+**Pattern:** Progressively improve data quality through layers
 
 ## Bronze Layer (Raw)
-- Raw, unprocessed data
-- Exact copy from source
+**Purpose:** Landing zone for raw data
+
+### Characteristics:
+- Exact copy from source (immutable)
 - Append-only
-- Immutable
+- Any format
+- Minimal validation
 
 **Example:** Raw JSON logs, CSV files as uploaded
 
+**Storage:** JSON, CSV, Parquet
+
 ## Silver Layer (Cleansed)
-- Cleaned and validated
-- Standardized formats
-- Deduplicated
-- Basic transformations
+**Purpose:** Cleaned and validate data
+
+### Transformations:
+- Remove duplicates
+- Handle nulls
+- Standardized formats (dates, phones)
+- Data type fixes
+- Basic quality checks
 
 **Example:** Parsed logs, filtered invalid records
 
-## Gold Layer (Curated)
-- Business-level aggregates
-- Optimized for analytics
-- Feature-engineered for ML
-- Ready for consumption
+**Storage:** Parquet (compressed, columnar)
 
-**Example:** Daily sales aggregates, customer 360 views
+## Gold Layer (Curated)
+**Purpose:** Business-ready data
+
+### Transformations:
+- Aggregations (daily, monthly summaries)
+- Business metrics (KPIs, revenue)
+- Feature engineering for ML
+- Optimized for specific use cases
+
+**Example:** Daily sales by region, customer 360 views
+
+**Storage:** Parquet, Delta Lake, or Data Warehouse tables
+
+## Data Flow Example:
+```sql
+-- Bronze: Raw data
+{"user_id": "123", "event": "click", "timestamp": "2024-12-26T10:00:00Z"}
+
+-- Silver: Cleaned
+user_id | event | timestamp           | date
+123     | click | 2024-12-26 10:00:00 | 2024-12-26
+
+-- Gold: Aggregated
+date       | total_clicks | unique_users
+2024-12-26 | 1500000     | 50000
+```
 
 # Schema-on-Read vs Schema-on-Write
 
