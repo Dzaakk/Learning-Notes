@@ -76,18 +76,30 @@ date       | total_clicks | unique_users
 
 ## Schema-on-Write (Data Warehouse)
 ![schema on write](./images/schema-on-write.png)
-- Define schema before loading
-- Slower ingestion (validation)
-- Fast queries (optimized structure)
+- Schema defined before loading
+- Slower ingestion (validaiton overhead)
+- Fast, predictable queries
+- Fixed structure
+  
+**When to use:** Known use cases, structured data, need speed
 
 ## Schema-on-Read (Data Lake)
 ![schema on read](./images/schema-on-read.png)
-- Load data as-is
-- Fast ingestion (validation)
-- Flexible querying
-- Slower queries (no optimization)
-  
+- Schema defined when querying
+- Fast ingestion (no validation)
+- Flexible (any format)
+- Slower queries
+
+**When to use:** Unkown use cases, diverse data, exploration\
 **Trade-off:** Flexibility vs Performance
+
+# File Formats
+
+## Row-Oriented (OLTP)
+- **CSV:** Human-readable, inefficient
+- **JSON:** Flexible, nested data, large size
+
+**Use Case:** Bronze layer, small datasets
 
 # Popular Data Lake Solutions
 
