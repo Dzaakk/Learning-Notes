@@ -289,19 +289,73 @@ Default: Parititon by date (most common query pattern)
 - Data freshness
 - Pipeline Success rate
 
-# When to Use a Data Lake
-- Need to store diverse data types
-- Don't know future use cases
-- Machine learning/ data science
-- Real-time/streaming data
-- Need cheap storage
-- Exploratory analysis
+# When to Use Data Lake
+
+## Choose Data Lake When:
+✅ Need to store diverse data types\
+✅ Unkonw future use cases\
+✅ ML/data science workloads\
+✅ Streaming data\
+✅ Cost-sensitive\
+✅ Need flexibility
 
 ## Examples:
 - IoT sensor data
 - Application logs
 - Social media feeds
-- Image/video storage
+- Images/videos 
 - ML training data
+- Clickstream analytics
 
+# Real-World Examples
 
+## Netflix
+**Data Lake:** AWS S3
+- Viewing history (billions of events)
+- ML training data for recommendations
+
+**Processing:** Spark on EMR\
+**Cost:** ~$0.023/GB/month
+
+## Uber
+**Data Lake:** GCS
+- Trip data, GPS coordinates
+- Real-time event streaming
+
+**Analytics:** BigQuery\
+**Processing:** Spark + Flink
+
+## Airbnb
+**Lakehouse:** Databricks Delta Lake
+- Listing data, booking events
+- Unified platform for BI + ML
+
+# Quick Decision Guide
+## Data Lake When:
+- Diverse data (structured + unstructured)
+- ML/exploration workloads
+- Cost-sensitive
+- Unkown future queries
+
+## Data Warehouse when:
+- Only stuctured data
+- Known BI/reporting use cases
+- Fast queries critical
+- Consistency required
+
+## Data Lakehouse when:
+- Need both BI + ML
+- Want single platform
+- Modern projects
+- Best of both worlds
+
+# Key Takeaways
+1. **Medallion:** Bronze (raw) → Silver (cleaned) → Gold (curated)
+2. **Schema-on-read:** Load any foramt, define schema at query time
+3. **File Formats:** CSV/JSON → Parquet → Delta Lake (quality progression)
+4. **Partitioning:** By date (most common) for query performance
+5. **Avoid Swamp:** Metadata catalog + governance + organization
+6. **Modern Trend:** Data Lakehouse = Lake + Warehouse combined
+7. **Cost:** $0.023/GB/month (S3) vs $25+/TB/month (warehouse)
+
+**Remember:** Data lake prioritize **flexibility & cost** over performance. For fast queries, transform to Parquet and use partitioning
