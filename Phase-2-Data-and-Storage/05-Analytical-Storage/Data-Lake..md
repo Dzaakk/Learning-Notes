@@ -101,42 +101,68 @@ date       | total_clicks | unique_users
 
 **Use Case:** Bronze layer, small datasets
 
-# Popular Data Lake Solutions
-
-## 1. Amazon S3 + AWS Glue
-**Storage:** S3 (object storage)\
-**Catalog:** AWS Glue (metadata)\
-**Query:** Athena (SQL), EMR (Spark)
+## Column-Oriented (OLAP)
+- **Parquet:** Compressed, columnar, fast aggregations
+- **ORC:** Similiar to Parquet, optimized for Hive
 
 ### Benefits:
-- Cost-effective
-- Scalable
-- Integrates with AWS ecosystem
+- 5-10x compression
+- Read only needed columns
+- Fast analytical queries
 
-## 2. Azure Data Lake Storage (ADLS)
-**Storage:** ADLS Gen2\
-**Processing:** Azure Databricks, synapse\
-**Catalog:** Azure Pureveiw
+**Use Case:** Silver/Gold layers
 
-### Benefits:
-- Hierarchical namespace
-- Enterprise security
-- Integrates with Azure services
+**Example:**
+```py
+# Bad: CSV (1GB)
+df.write.csv("path/")
 
-## 3. Google Cloud Storage + BigQUery
-**Storage:** GCS\
-**Processing:** Dataproc (Spark), BigQuery\
-**Catalog:** Data Catalog
+# Good: Parquet (100MB, 10x smaller + faster queries)
+df.write.parquet("path/")
+```
 
-## 4. Databricks Lakehouse
-**Hybrid:** Combines Data Lake + Warehouse features\
-**Format:** Delat Lake (ACID on data lakes)
+## Transactional Formats (Modern Lakehouse)
+- **Delta Lake:** ACID on S3/ADLS
+- **Apache Iceberg:** Table format with time travel
+- **Apache Hudi:** Incremental processing
 
 ### Features:
-- ACID tarnsaction on s3/ADLS
-- Time travel
+- ACID transactions
+- Time travel (query history)
 - Schema evolution
-- Unified batch and streaming
+- Upserts/deletes
+  
+**Use Case:** Production data lakes (Silver/Gold)
+# Popular Data Lake Solutions
+
+## 1. AWS: S3 + Glue + Athena
+- **S3:** Object storage 
+- **Glue:** Data catalog + ETL
+- **Athena:** SQL queries on S3 (pay per query)
+
+**Use Case:** AWS-native, cost-sensitive
+
+## 2. Azure ADLS Gen2 + Databricks
+- **ADLS Gen2:** Hierarchical storage
+- **Databricks:** Spark processing + Delta Lake
+- **Synapse:** Analytics service
+
+**Use Case:** Microsoft ecosystem, enterprises
+
+## 3. Google Cloud Storage (GCS) + BigQUery
+- **GCS:** Object storage
+- **BigQuery:** Serverless warehouse (can query GCS)
+- **Dataproc:** Managed Spark
+
+**Use Case:** Google Cloud, serverless preference
+
+## 4. Databricks Lakehouse (Modern Choice)
+- Multi-cloud (AWS/Azure/GCP)
+- Delta Lake built-in
+- Unified BI + ML platform
+
+**Use Case:** Moder data platforms, best-in-class
+
 
 # Data Lake Challenges
 
