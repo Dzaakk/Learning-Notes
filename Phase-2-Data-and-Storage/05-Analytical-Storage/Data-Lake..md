@@ -164,34 +164,130 @@ df.write.parquet("path/")
 **Use Case:** Moder data platforms, best-in-class
 
 
-# Data Lake Challenges
+# Data Lake Challenges & Solutions
 
-## 1. Data Swamp Problem
-**Issue:** Unorganized data becomes unusable
+## 1. Data Swamp 
+**Problem:** Unorganized data → impossible to find/use
+
+### Causes:
+- No metadata
+- No ownership
+- No documentation
 
 ### Solutions:
-- Implement metadata catalog
-- Enforce naming conventions
-- Zone-based organization (bronze/silver/gold)
-- Data quality checks
+- Metadata catalog (Glue, Purview, Atlas)
+- Naming conventions: s3://lake/bronze/source/table/year=2024/
+- Clear ownership (data teams)
+- Automated data profiling
 
 ## 2. Performance Issues
-**Issue:** Querying raw data is slow
+**Problem:** Slow queries on raw data
 
 ### Solutions:
-- Partition data (by date, region, etc)
-- Use columnar formats (Parquet, ORC)
-- Create indexes/statistics
-- Cache frequently accessed data
+- Use Parquet (not CSV/JSON)
+- Partition by date: /year=2024/month=12/day=26/
+- Optimize file sizes (128MB-1GB per file)
+- Use Delta Lake for indexing
+
+### Example:
+```py
+# Partition for fast queries
+df.write \
+    .partitionBy("year", "month", "day") \
+    .parquet("s3://lake/silver/events/")
+
+# Query only Dec 2024
+spark.read.parquet("s3://lake/silver/events/") \
+    .filter("year=2024 AND month=12")
+```
 
 ## 3. Security and Governance
-**Issue:** Sensitive data exposed
+**Problem:** Sensitive data exposed
 
 ### Solutions:
-- Fine-grained access control
-- Encryption at rest and in transit
-- Data masking
-- Audit logs
+- Fine-grained access (column-level, permissions)
+- Encryption: at rest + in transit
+- Data masking for PII
+- Audit logs (who accessed what)
+
+### Example - Data Masking:
+```sql
+-- Create masked view
+CREATE VIEW customers_masked AS
+SELECT 
+    customer_id,
+    CONCAT(LEFT(email, 3), '***@***.com') as email,
+    CONCAT('***-', RIGHT(phone, 4)) as phone
+FROM customers;
+```
+
+## 4. Data Quality
+**Problem:** Inconsistent, invalid data
+
+### Solutions:
+- Validation at Silver layer
+- Data quality framework (Great Expectations)
+- Automated monitoring
+- Reject bad records to quarantine
+
+# Data Lake vs Data Warehouse
+|Aspect|Data Lake|Data Warehouse|
+|-|-|-|
+|Data|All types|Structured only|
+|Schema|Schema-on-read|Schema-on-write|
+|Speed|Ingestion fast, queries slow|Ingestion slow, queries fast|
+|Cost|Cheap|Expensive|
+|Use Case|ML, exploration|BI, reporting|
+|Users|Data scientist|Business analyst|
+|Example|S3, ADLS|Redshift, Snowflake|
+
+
+# Data Lakehouse (Modern Hybrid)
+**Definition:** Combines lake flexibility + warehouse performance
+
+## How:
+![data lakehouse](./images/data-lakehouse.png)
+
+## Features:
+- Store raw data (like lake)
+- ACID transaction (like warehouse)
+- Fast queries (like warehouse)
+- Low cost (like lake)
+
+## Technologies:
+- Databricks Delta Lake
+- Apache Iceberg
+- Apache Hudi
+
+## Benefits:
+- Single platform for BI + ML
+- No data duplication
+- Best of both worlds
+
+# Best Practices
+
+## 1. Always Use Medallion Pattern
+Bronze → Silver → Gold (clear quality progression)
+
+## 2. Chose Right File Format
+> Bronze: Any format (CSV, JSON)\
+> Silver: Parquet (compressed, columnar)\
+> Gold: Delta Lake (ACID + performance) 
+
+## 3. Partition Smart
+Default: Parititon by date (most common query pattern)
+
+## 4. Governance from Day 1
+- Metadata catalog
+- Clear ownership
+- Access policies
+- Retention rules
+
+## 5. Monitor Key Metrics
+- Storage costs
+- Query performance (p95)
+- Data freshness
+- Pipeline Success rate
 
 # When to Use a Data Lake
 - Need to store diverse data types
