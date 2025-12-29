@@ -476,3 +476,157 @@ GROUP BY date
 - PySpark-based
 
 **Use Case:** AWS-native
+
+# Common Challenges & Solutions
+
+## Challenge 1: Schema Changes
+**Problem:** Source schema changes → pipeline breaks
+
+### Solutions:
+- Schema versioning
+- Flexible parsing
+- Alert on schema drift
+- Test with new schema before deploy
+
+## Challenge 2: Data Volume Growth
+**Problem:** Pipeline too slow for growing data
+
+### Solutions:
+- Optimize queries (indexes, partitions)
+- Incremental processing
+- Parallel processing
+- Scale infrastructure
+
+## Challenge 3: Data Quality
+**Problem:** Bad data in = bad data out
+
+### Solutions:
+- Validation at each stage
+- Data quality framework (Great Expectations)
+- Quarantine bad records
+- Alert on quality issues
+
+## Challenge 4: Dependency Management
+**Problem:** Pipeline B depends on Pipeline A
+
+### Solutions:
+- Use orchestrator (Airflow)
+- Define dependencies explicitly
+- Sensor to wait for upstream
+- Retry with backoff
+
+# Real-World Example: E-commerce Analytics
+
+## Goal: Daily sales dashboard
+
+### Sources:
+- PostgreSQL (orders, customers)
+- MongoDB (product catalog)
+- Stripe API (payments)
+
+### Pipeline (Airflow):
+```py
+# DAG Definition
+dag = DAG('ecommerce_etl', schedule='@daily', start_date='2024-01-01')
+
+# Tasks
+extract_orders = PostgresOperator(
+    task_id='extract_orders',
+    sql='SELECT * FROM orders WHERE date = {{ ds }}'
+)
+
+extract_products = MongoOperator(
+    task_id='extract_products',
+    query={'updated': {'$gte': '{{ ds }}'}}
+)
+
+extract_payments = HttpOperator(
+    task_id='extract_payments',
+    endpoint='https://api.stripe.com/payments'
+)
+
+transform_data = PythonOperator(
+    task_id='transform',
+    python_callable=transform_fn
+)
+
+load_warehouse = SnowflakeOperator(
+    task_id='load',
+    sql='INSERT INTO fact_sales SELECT * FROM staging'
+)
+
+# Dependencies
+[extract_orders, extract_products, extract_payments] >> transform_data >> load_warehouse
+```
+
+### Transformation Logic:
+```py
+def transform_fn():
+    # Join data
+    sales = orders.merge(products, on='product_id')
+    sales = sales.merge(payments, on='order_id')
+    
+    # Clean
+    sales = sales.dropna(subset=['customer_id'])
+    sales['amount'] = sales['amount'].astype(float)
+    
+    # Enrich
+    sales['revenue'] = sales['quantity'] * sales['price']
+    sales['profit'] = sales['revenue'] * 0.3  # 30% margin
+    
+    # Aggregate
+    daily_sales = sales.groupby('date').agg({
+        'order_id': 'count',
+        'revenue': 'sum',
+        'profit': 'sum'
+    })
+    
+    return daily_sales
+```
+
+### Results:
+- Runs daily at 2 AM
+- Processes ~1M orders/day
+- Loads to Snowflake in ~10 minutes
+- Power TAbleau dashboard
+
+# Quick Decision Guide
+
+## Choose Batch When:
+- Daily/hourly reports OK
+- Large volumes
+- Simple implementation needed
+- Cost-sensitive
+
+## Choose Streaming When:
+- Real-time insights required (<1 second)
+- Fraud detection, recommendations
+- Event-driven architecture
+- Can handle complexity
+
+## Choose Micro-Batch When:
+- Near real-time OK (1-5 minutes)
+- Balance cost and latency
+- Simpler than streaming
+
+## Choose ETL When:
+- Limited warehouse compute
+- Complex transformations
+- On-premise 
+
+## Choose ELT When:
+- Cloud warehouse (Redshift, BigQuery) 
+- Want flexibility
+- Fast loading needed
+
+# Key Takeaways
+1. **ETL:** Transform before load (traditional)
+2. **ELT:** Load then transform (modern cloud)
+3. **Batch:** Process on schedule (hours latency)
+4. **Streaming:** Process continuously (seconds latency)
+5. **Idempotency:** Safe to retry, no duplicates
+6. **Incremental:**Only process new data
+7. **Monitoring:** Success rate, freshness, quality
+8. **Tools:** Airflow (orchestrate), dbt (transform), Spark (big data), Kafka (Streming)
+
+**Remember:** Start simple (batch ETL), add complexity only when needed (streaming, ELT)
