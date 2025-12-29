@@ -50,7 +50,7 @@ CAP Theorem
 ## Scenario: Netwrok Partition Occurs
 ### Option 1: Choose Consistency (CP)
 > Write to Node A (US)\
-Network parititon happens\
+Network partition happens\
 Read from Node B (EU) - can't sync with node A\
 → Return error or wait (sacrifice availability)
 

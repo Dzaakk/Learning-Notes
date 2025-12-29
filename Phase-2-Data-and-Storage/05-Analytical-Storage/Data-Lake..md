@@ -275,7 +275,7 @@ Bronze → Silver → Gold (clear quality progression)
 > Gold: Delta Lake (ACID + performance) 
 
 ## 3. Partition Smart
-Default: Parititon by date (most common query pattern)
+Default: Partition by date (most common query pattern)
 
 ## 4. Governance from Day 1
 - Metadata catalog

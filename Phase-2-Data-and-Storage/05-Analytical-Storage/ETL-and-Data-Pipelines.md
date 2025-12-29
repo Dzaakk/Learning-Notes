@@ -53,7 +53,7 @@ ETL and Data Pipelines
 ✅ Fast loading (no transformation delay)\
 ✅ Leverage powerful warehouse compute\
 ✅ Raw data available for reprocessing\
-✅ Schema flexibility required
+✅ Schema flexibility 
 
 ### Cons:
 ❌ Higher warehouse compute costs\
@@ -63,7 +63,7 @@ ETL and Data Pipelines
 ## Comparison Table:
 |Aspect|ETL|ELT|
 |-|-|-|
-|**Tranform Where**|Before load (staging)|After load(warehouse)
+|**Transform Where**|Before load (staging)|After load (warehouse)
 |**Loading Speed**|Slower|Faster
 |**Warehouse Load**|Lower|Higher
 |**Best for**|Limited resources|Cloud warehouses
@@ -110,7 +110,7 @@ ETL and Data Pipelines
 
 ### Cons:
 ❌ Data not real-time (hours old)\
-❌ Latency in insight\
+❌ Latency in insights\
 ❌ Fixed schedule
 
 ## 2. Streaming Processing (Real-Time)
@@ -185,7 +185,7 @@ ETL and Data Pipelines
 |Aspect|Batch|Micro-Batch|Streaming|
 |-|-|-|-|
 |Latency|Hours|Minutes|Seconds|
-|Complexity|Low|Medium|high|
+|Complexity|Low|Medium|High|
 |Cost|Low|Medium|High|
 |Use Case|Reports|Near real-time|Real-time|
 
@@ -204,7 +204,7 @@ ETL and Data Pipelines
 - **APIs:** REST, GraphQL
 - **Files:** CSV, JSON, Parquet
 - **Streams:** Kafka, Kinesis
-- **SaaS:** Salesforce, Google, Analytics
+- **SaaS:** Salesforce, Google Analytics
 
 ### Extraction Methods:
 
@@ -227,7 +227,7 @@ WHERE updated_at > '2024-12-25 00:00:00';
 
 #### Change Data Capture (CDC)
 Capture database changes in real-time
-> Database → CDC Tool, → Stream Changes
+> Database → CDC Tool → Stream Changes
 
 **Tools:** Debezium, AWS DMS
 
@@ -381,7 +381,7 @@ except Exception as e:
     send_alert(e)
     retry_with_backoff()
 ```
-**Why:**Pipelines will fail, handle gracefully
+**Why:** Pipelines will fail, handle gracefully
 
 ## 5. Monitoring & Alerting
 
@@ -403,7 +403,7 @@ except Exception as e:
 **Type:** Workflow orchestration
 
 ### Features:
-- Python-based DAGs (Direcg Acyclic Graph)
+- Python-based DAGs (Directed Acyclic Graph)
 - Scheduling
 - Monitoring
 - Retry logic
@@ -512,7 +512,7 @@ GROUP BY date
 ### Solutions:
 - Use orchestrator (Airflow)
 - Define dependencies explicitly
-- Sensor to wait for upstream
+- Sensors to wait for upstream
 - Retry with backoff
 
 # Real-World Example: E-commerce Analytics
@@ -588,7 +588,7 @@ def transform_fn():
 - Runs daily at 2 AM
 - Processes ~1M orders/day
 - Loads to Snowflake in ~10 minutes
-- Power TAbleau dashboard
+- Power Tableau dashboard
 
 # Quick Decision Guide
 
@@ -625,8 +625,8 @@ def transform_fn():
 3. **Batch:** Process on schedule (hours latency)
 4. **Streaming:** Process continuously (seconds latency)
 5. **Idempotency:** Safe to retry, no duplicates
-6. **Incremental:**Only process new data
+6. **Incremental:** Only process new data
 7. **Monitoring:** Success rate, freshness, quality
-8. **Tools:** Airflow (orchestrate), dbt (transform), Spark (big data), Kafka (Streming)
+8. **Tools:** Airflow (orchestrate), dbt (transform), Spark (big data), Kafka (Streaming)
 
 **Remember:** Start simple (batch ETL), add complexity only when needed (streaming, ELT)
