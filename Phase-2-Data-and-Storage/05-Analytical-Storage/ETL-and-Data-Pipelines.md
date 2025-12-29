@@ -193,3 +193,286 @@ ETL and Data Pipelines
 - Need same-day data? → Batch
 - Need data withing 5 minutes? → Micro-batch
 - Need data within seconds? → Streaming
+
+# ETL Phases in Detail
+
+## 1. Extract
+**Goal:** Get data from source systems
+
+### Sources:
+- **Databases:** PostgreSQL, MySQL, MongoDB
+- **APIs:** REST, GraphQL
+- **Files:** CSV, JSON, Parquet
+- **Streams:** Kafka, Kinesis
+- **SaaS:** Salesforce, Google, Analytics
+
+### Extraction Methods:
+
+#### Full Extraction
+Pull all data every time
+```sql
+SELECT * FROM orders;
+```
+**Pros:** Simple\
+**Cons:** Inefficient, slow
+
+#### Incremental Extraction (Most Common)
+Pull only new/changed data
+```sql
+SELECT * FROM orders
+WHERE updated_at > '2024-12-25 00:00:00';
+```
+**Pros:** Efficient, fast\
+**Cons:** Need to track last run
+
+#### Change Data Capture (CDC)
+Capture database changes in real-time
+> Database → CDC Tool, → Stream Changes
+
+**Tools:** Debezium, AWS DMS
+
+**Pros:** Real-time, no polling\
+**Cons:** Complex setup
+
+## 2. Transform
+**Goal:** Clean, validate, enrich data
+
+**Common Transformation:**
+
+### Data Cleaning
+```py
+# Remove duplicates
+df.drop_duplicates()
+
+# Handle nulls
+df.fillna(0)
+
+# Fix data types
+df['date'] = pd.to_datetime(df['date'])
+
+# Standardize
+df['phone'] = df['phone'].str.replace('[^0-9]', '')
+```
+
+### Data Validation
+```py
+# Reject invalid records
+if not email.contains('@'):
+    reject_record()
+
+# Check ranges
+if age < 0 or age > 120:
+    reject_record()
+```
+
+### Data Enrichment
+```py
+# Add derived fields
+customer_ltv = sum(orders.amount)
+
+# Lookup dimensions
+city = geocode_zipcode(zipcode)
+
+# Calculate metrics
+conversion_rate = purchases / visits
+```
+
+### Data Aggregation
+```sql
+-- Daily summaries
+SELECT 
+    DATE(order_date) as date,
+    COUNT(*) as order_count,
+    SUM(amount) as total_revenue
+FROM orders
+GROUP BY date;
+```
+
+## 3. Load
+**Goal:** Insert data into target system
+
+**Loading Strategies:**
+
+### Full Load
+Replace entire table
+
+```sql
+TRUNCATE TABLE dim_products;
+INSERT INTO dim_products SELECT * FROM staging;
+```
+**Use Case:** Small tables, rebuild needed
+
+### Incremental Load
+Insert only new records
+
+```sql
+INSERT INTO fact_sales
+SELECT * FROM staging
+WHERE sale_id NOT IN (SELECT sale_id FROM fact_sales);
+```
+**Use Case:** Large tables, append-only
+
+### Upsert (Merge)
+Insert new, update existing
+
+```sql
+MERGE INTO customers AS target
+USING staging AS source
+ON target.id = source.id
+WHEN MATCHED THEN UPDATE
+WHEN NOT MATCHED THEN INSERT;
+```
+**Use Case:** Dimension tables, updates frequent
+
+# Best Practices
+
+## 1. Idempotency
+**Rule:** Running pipeline multiple times = same result
+
+```py
+# Bad: Incremental without checks
+INSERT INTO sales VALUES (...);
+
+# Good: Idempotent upsert
+MERGE INTO sales ...
+```
+**Why:** Safe to retry, no duplicates
+
+## 2. Incremental Processing
+**Rule:** Only process new/changed data
+
+```py
+# Track last run
+last_run = get_last_run_timestamp()
+
+# Extract only new data
+new_data = source.query(f"WHERE updated_at > '{last_run}'")
+
+# Update after success
+set_last_run_timestamp(current_time)
+```
+**Why:** Faster, cheaper, scalable
+
+## 3. Data Quality Checks
+```py
+# Extract: Check source
+if not source_db.is_connected():
+    alert_team()
+
+# Transform: Validate data
+if null_percentage > 5%:
+    alert_team()
+
+# Load: Verify counts
+if target_count != source_count:
+    alert_team()
+```
+**Why:** Catch issues early
+
+## 4. Error Handling
+```py
+try:
+    extract_data()
+    transform_data()
+    load_data()
+    log_success()
+except Exception as e:
+    log_error(e)
+    send_alert(e)
+    retry_with_backoff()
+```
+**Why:**Pipelines will fail, handle gracefully
+
+## 5. Monitoring & Alerting
+
+### Key Metrics:
+- Pipeline success rate (target: >99%)
+- Run duration (track p95)
+- Data freshness (time since last update)
+- Row counts (source vs target)
+
+### Alerts:
+- Pipeline failure
+- Data quality issues
+- SLA violations
+- Unusual data volume
+
+# Popular ETL Tools
+
+## 1. Apache Airflow
+**Type:** Workflow orchestration
+
+### Features:
+- Python-based DAGs (Direcg Acyclic Graph)
+- Scheduling
+- Monitoring
+- Retry logic
+
+**Use Case:** Complex pipelines, Python users
+
+### Example:
+```py
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+
+dag = DAG('etl_daily', schedule='@daily')
+
+extract = PythonOperator(task_id='extract', python_callable=extract_fn)
+transform = PythonOperator(task_id='transform', python_callable=transform_fn)
+load = PythonOperator(task_id='load', python_callable=load_fn)
+
+extract >> transform >> load  # Dependencies
+```
+
+## 2. dbt (Data Build Tool)
+**Type:** SQL transformation framework
+
+### Features:
+- SQL-based transformations
+- Version control (Git)
+- Testing
+- Documentation
+
+**Use Case:** Analytics engineering, SQL transformations
+
+### Example:
+```sql
+-- models/daily_sales.sql
+{{ config(materialized='table') }}
+
+SELECT 
+    DATE(order_date) as date,
+    SUM(amount) as revenue
+FROM {{ ref('staging_orders') }}
+GROUP BY date
+```
+
+## 3. Apache Spark
+**Type:** Distributed processing
+
+### Features:
+- Batch and streaming
+- Python/Scala/Java APIs
+- Handles large datasets
+
+**Use Case:** Big data processing
+
+## 4. Fivetran / Stitch
+**Type:** Managed ELT (SaaS)
+
+### Features:
+- Pre-built connectors (150+)
+- Automatic schema changes
+- No-code setup
+
+**Use Case:** Quick setup, non-technical teams
+
+## 5. AWS Glue
+**Type:** Serverless ETL
+
+### Features:
+- Auto-scaling
+- Data catalog
+- PySpark-based
+
+**Use Case:** AWS-native
