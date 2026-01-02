@@ -183,4 +183,213 @@ Shard by User ID:
 - Query "Show global trending" → all shards (slow)
 
 **Whent to shard:** When single DB can't handle write load (~10k writes/sec)
- 
+
+# 5. Microservices Pattern
+Break monolith into independent services that can scale independently
+
+## Structure
+![microservices structure](./images/microservices-structure.png)
+
+## Benefits
+- Scale services independently (scale Orders during Black Friday)
+- Technology flexibility (different languages per service)
+- Team autonomy (separate teams per service)
+- Fault isolation (Orders down ≠ whole system down)
+
+## Trade-offs
+- Network latency (inter-service calls)
+- Distributed tracing needed
+- Data consistency challenges
+- Operational complexity
+- More moving parts
+
+## When to use
+- ❌ **Don't start with mciroservices** (premature optimization)
+- ✅ Move to microservices when: 
+  - Team > 10-15 developers
+  - Clear bounded contexts
+  - Different scaling needs per feature
+  - Monolith deployment is painful
+
+# 6. Content Delivery Network (CDN)
+Cache static content geographically close to users
+
+## How It Works
+![how cdn works](./images/how-cdn-works.png)
+
+## What to Cache
+- Images, videos
+- CSS, JavaScript
+- Static HTML pages
+- API responses (with short TTL)
+
+## Benefits
+- Reduce latency (geographically close)
+- Reduce origin server load
+- Handle traffic spikes
+- DDoS protection
+
+## Example: YouTube
+> Video uploaded → Origin servers\
+> User watch → Served from nearest CDN\
+> Result: Milliseconds vs seconds of latency
+
+# 7. Message Queue (Async Processing)
+Decouple services and handle tasks asynchronously
+
+## Pattern
+![message queue pattern](./images/message-queue-pattern.png)
+
+## Use Cases
+
+### Email Sending
+> User signs up\
+> → Add "send welcome email" to queue\
+> → Return success immediately\
+> → Worker picks up job and sends email
+
+### Image Processing
+> User uploads photo\
+> → Store original\
+> → Add "resize image" jobs to queue\
+> → Workers generate thumbnails\
+> → Update DB when done
+
+### Order Processing
+> User places order\
+> → Queue: [Check inventory, Charge payment, Send notification, Update analytics]\
+> → Each task processed by specialized workers
+
+## Benefits
+- Better user experience (fast response)
+- Resilience (retry fialed jobs)
+- Scale workers independently
+- Handle traffic spikes (queue buffers load)
+
+## Pattern: Dead Letter Queue
+> Job fails 3 times → Move to Dead Letter Queue\
+> → Alert engineers\
+> → Manual investigation
+
+# 8. Database Partitioning (Vertical)
+Split tables into different databases based on access patterns
+
+## Example: E-commerce
+>[User DB]       ← Users, Auth\
+>[Product DB]    ← Products, Categories\
+>[Order DB]      ← Orders, Transactions\
+>[Analytics DB]  ← Logs, Events
+
+## Benefits
+- Optimize each DB for its workload
+- Isolate failures
+- Independent scaling
+- Different DB tech per use case (SQL for orders, NoSQL for logs)
+
+## Trade-off
+- Joins across databases impossible
+- Distributed transactions
+  
+# 9. Auto-Scaling
+Automatically adjust number of servers based on load
+
+## Metrics to Scale On
+- **CPU usage** > 70% → add servers
+- **Request rate** > 100/sec → add servers
+- **Queue depth** > 100 → add workers
+- **Response time** > 500ms → add servers
+
+## Pattern
+![auto scaler pattern](./images/auto-scaler-pattern.png)
+
+## Best Practices
+- Scale up quickly (2-5 minutes)
+- Scale down slowly (avoid thrashing)
+- Have minimum and maximum limits
+- Use multiple metrics (not just CPU)
+
+# 10. Circuit Breaker Pattern
+Prevent cascading failures when a service is down
+
+## States
+![circuit breaker states](./images/circuit-breaker-states.png)
+
+## Example
+```js
+// Circuit breaker wraps API call
+const result = await circuitBreaker.call(() => 
+  externalAPI.getUserData(userId)
+);
+
+// If externalAPI is down:
+// - First 5 failures → keeps trying
+// - After 5 failures → circuit OPENS
+// - Next 100 requests → fail immediately (no waiting)
+// - After 30 seconds → try again (HALF-OPEN)
+```
+
+## Benefits
+- Prevent cascading failrues
+- Fast failure (don't wait for timeouts)
+- Give downstream time to recover
+- Better user experience (fail fast)
+
+# Combining Patterns: Real Architecture
+
+## Example: Video Streaming Platform
+![video streaming platform](./images/video-streaming-platform.png)
+
+## Patterns used
+1. CDN (global distribution)
+2. Load balancing (distribute requests)
+3. Caching (reduce DB load)
+4. Message queue (async video processing)
+5. Database replication (scale reads)
+6. Sharding (scale comments)
+7. Auto-scaling (handle traffic spikes)
+8. Microservices (API, workers, encoding service)
+
+# Scaling Path: Startup → Scale
+
+## Stage 1: MVP (0-1K users)
+> [Single Server]
+> - web app + DB on one machine
+> - Pattern: None (vertical scaling only)
+
+## Stage 2: Growth (1K-100K users)
+![growth stage](./images/growth-stage.png)
+
+## Stage 3: Scale (100K-1M users)
+![sclae stage](./images/scale-stage.png)
+
+## Stage 4: Massive Scale (1M+ users)
+>Add: Multi-region deployment, Advanced caching, Specialized database, Event sourcing, CQRS, Service mesh
+
+# Decision Framework
+## Bottlenect → Pattern
+|Problem|Pattern|
+|-|-|
+|Single server overloaded|Load balancing|
+|DB queries slow|Caching|
+|Too many reads|DB replication|
+|Too many writes|Sharding|
+|Different services scale differently|Microservices|
+|High latency for global users|CDN|
+|Long-running tasks|Message queue|
+|Traffic spikes|Auto-scaling|
+|Service failures cascade|Circuit breaker|
+
+# Anti-Patterns to Avoid
+❌ **Premature scaling:** Don't shard before 10K writes/sec\ 
+❌ **Over-engineering:** Don't use microservices for MVP\
+❌ **No monitoring:** Can't scale what you don't measure\
+❌ **Scaling wrong layer:** Adding web servers when DB is the bottlenect\
+❌ **Ignoring caching:** Easiest performance win
+
+# Key Takeaway
+>Scale incrementally. Measure, find the bottleneck, apply the appropriate pattern, repeat
+
+**Golden rule:** Start simple, add complexity only when you have data proving you need ito
+
+
+
