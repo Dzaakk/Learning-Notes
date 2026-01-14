@@ -140,3 +140,25 @@ System detects disasters and fails over without human intervention, fastest reco
 
 ### Failback Procedures
 Returning to primaryy site after disaster recovery is as important as failover. Verify primary site fully recovered, synchronoize data from DR to primary, plan maintenance window for failback, gradually shift traffic back, and maintain DR site ready in case of issues.
+
+## Testing and Validation
+
+### DR Testing Types
+
+**Tabletop Exercices:** Team walks through DR plan on paper, identifies gaps in procedures, and low cost and disruption but doesn't validate technical execution.
+
+**Simulation Testing:** Execute DR plan in non-production environment, validates procedures without production risk, and reveals technical issues but doesn't test production systems.
+
+**Partial Failover Test:** Failover non-critical components to DR site, tests real systemms with limited risk, and provides confidence but doesn't validate full DR capability. 
+
+**Full Failover Test:** Complete failover of productiojn to DR site, most realistic test and validates everything, but high risk and complex coordination required.
+
+### Testing Frequency
+- **Critical Systems:** Quarterly full DR tests
+- **Important Systems:** Semi-annual tests
+- **Non-critical Systems:** Annual tests.
+
+Conduct tabletop exercises more frequently (monthly or quarterly).
+
+### Test Documentation
+Document test procedures, record test results and timings, identify issues discovered, track remediation actions, and update DR plan based on learning.
