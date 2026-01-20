@@ -170,3 +170,39 @@ Randomly selects a server for each request.
 - No intelligence about load
 
 **Best for:** Very simple systems, testing
+
+## Health Checks
+Load balancers continuously monitor backend server health to avoid routing traffic to failed servers.
+
+### Types of Health Checks
+
+#### 1. Passive Health Checks
+Monitor actual traffic to detect failures:
+- Track response codes (500, 502, 503, 504 errors)
+- Monitor timeouts
+- Count consecutive failures
+
+**Example configuration:**
+> unhealthy_threshold: 3 consecutive failures\
+> timeout: 5 seconds
+
+#### 2. Active Health Checks
+Proactively send test requests to servers:
+- HTTP GET request to health endpoint
+- TCP connection tests
+- Custom protocol checks
+
+**Example configuration:**
+> interval: 10 seconds\
+> timeout: 3 seconds\
+> healthy_treshold: 2 consecutive successes\
+> unhealthy_treshold: 3 consecutive successes\
+> path: /health\
+> expected_status:200
+
+### Health Check Best Practices
+1. **Use dedicated health endpoints:** `/health` or `/ping` that check critical dependencies
+2. **Keep checks lightweight:** Don't overload servers with heavy health checks
+3. **Appropriate intervals:** Balance between quick failure detection and overhead
+4. **Check dependencies:** Verify database, cache, and external service connectivity
+5. **Graceful degradation:** Return partial health status when non-critical components fail
