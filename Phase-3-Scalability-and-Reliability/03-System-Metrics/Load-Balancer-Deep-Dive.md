@@ -206,3 +206,205 @@ Proactively send test requests to servers:
 3. **Appropriate intervals:** Balance between quick failure detection and overhead
 4. **Check dependencies:** Verify database, cache, and external service connectivity
 5. **Graceful degradation:** Return partial health status when non-critical components fail
+
+## Session Persistence (Sticky Sessions)
+
+### What is Session Persistence?
+Ensures requests from the same client always route to the same backend server.
+
+### Implementation Methods
+
+#### 1. Cookie-Based Persistence
+Load balancer inserts a cookie to track which server handled the first request.
+
+**Example:**
+> First request → Server B\
+> Response includes: Set-Cookie:\
+> LB_SERVER=B\
+> Subsequent requests with cookie → Server B
+
+**Pros:**
+- Works across different client IPs (mobile networks)
+- Survives client network changes
+
+**Cons:**
+- Requires cookie support
+- Adds overhead
+
+#### 2. IP-Based Persistence
+Uses source IP address (IP Hash algorithm).
+
+**Pros:**
+- No cookies needed
+- Transprent to application
+
+**Cons:**
+- Breaks with NAT/proxies
+- Problem with mobile clients
+
+#### 3. Application-Controlled
+Application sets custom header or parameter.
+
+**Pros:**
+- Full aplication control
+- Can migrate sessions
+
+**Cons:**
+- Requires application changes
+
+### When to Use Session Persistence
+
+**Use when:**
+- Application stores session state locally on servers
+- WebSocket connections
+- Shopping carts, user session without centralized storage
+
+**Avoid when:**
+- Sessions are stored in shared cache (Redis)
+- Database-backed sessions
+- Stateless applications
+
+**Better alternatives:**
+- Use centralized session storage (Redis, Memcached)
+- Use database-backed sessions
+- Design stateless applications
+
+## SSL/TLS Termination
+
+### What is SSL Termination?
+Load balancer handles SSL/TLS encryption/decryption instead of backend servers.
+
+### SSL Termination at Load Balancer
+#### Advantages:
+- Reduces CPU load on backend servers
+- Centralized certificate management
+- Can inspect/modify encrypted traffic
+- Simplifies backend server configuration
+
+#### Disadvantages:
+- Traffic between LB and backend is unencrypted (security concern)
+- Load balancer becomes bottleneck for encryption
+
+### SSL Pass-Through
+Load balancer forwards encrypted traffic directly to backend servers.
+
+#### Advantages:
+- End-to-end encryption
+- No decryption overhead on load balancer
+
+#### Disadvantages:
+- Cannot perform content-based routing
+- Each backend needs certificates
+- Higher CPU usage on backends
+
+### SSL Re-Encryption (SSL Bridging)
+Load balancer decrypts, inspects, then re-encrypts traffic to backends.
+
+#### Best of both worlds but:
+- Highest overhead
+- Most secure
+- Most flexible
+
+## Advanced Load Balancer Features
+
+### 1. Connection Draining
+Gracefully removes servers from rotation:
+- Stop sending new connections
+- Allow existing connections to complete
+- Set timeout for stragglers
+
+**Use cases:** Deployments, maintenance, scaling down
+
+### 2. Rate Limiting
+Limit request per client/IP:\
+> max_request: 100 per minute\
+> burst: 20
+
+**Protect against:**
+- DDoS attacks
+- Abusive clients
+- Accidental traffic spikes
+
+### 3. Request Routing
+Route based on content\
+> /api/* → API servers\
+> /static/* → CDN/static servers\
+> /admin/* → Admin servers
+
+### 4. Auto Scaling Integration
+Automatically add/remove servers based on metrics:
+- CPU usage
+- Request count
+- Response time
+- Custom metrics
+
+### 5. Observability
+- Access logs
+- Metrics (request rate, error rate, latency)
+- Distributed tracing headers
+- Health check status
+
+## Popular Load Balancer Technologies
+
+### Hardware Load Balancers
+- **F5 BIG-IP:** Enterprise-grade, expensive, high performance
+- **Citrix ADC:** Application delivery controller with advanced features
+
+**Pros:** High performance, dedicated hardware\
+**Cons:** Expensive, less flexible, vendor lock-in
+
+### Software Load Balancers
+- **NGINX:** High-performance, widely used, both L4 and L7
+- **HAProxy:** Extremely fast, TCP and HTTP, highly configurable
+- **Envoy:** Modern, cloud-native, service mesh support
+- **Traefik:** Kubernetes-native, automatic service discovery
+
+**Pros:** Flexible, cost-effective, cloud-friendly\
+**Cons:** Requires more management, runs on shared hardware
+
+### Cloud Load Balancers
+- **AWS ELB/ALB/NLB:** Managed service, highly available
+- **Google CLoud Load Balancing:** Global, anycast, integrated
+- **Azure Load Balancer:** Layer 4 and 7 options
+
+**Pros:** Fully managed, auto-scaling, high availability\
+**Cons:** Vendor lock-in, can be expensive at scale
+
+## Common Architectures
+
+### Single Load Balancer
+> Internet → Load Balancer → [Server 1, Server 2, Server 3]
+
+**Issues:** Single point of failure
+
+### High Availability Load Balancers
+> Internet → [LB 1 (Active), LB 2 (Standby)] → Backend Servers
+
+**Uses:** Keepalived, VRRP protocol for failover
+
+### Multi-Tier Load Balancing
+> Internet → Externeal LB → [Web Tier LBs] → [App Tier LBs] → [DB Read Replicas]
+
+### Global Load Balancing
+> User → DNS (Route 53) → Regional LBs → Backend Servers
+
+## Best Practices
+1. **Always use health checks:** Detec and remove unhealthy servers automatically
+2. **Enable connection draining:** Graceful shutdowns during deployments
+3. **Monitor load balancer metrics:** It can become a bottleneck
+4. **Use multiple availability zones:** Distribute across failure domains
+5. **Implement retry logic:** Handle transient failures
+6. **Set appropriate timeouts:** Balance between patience and responsiveness
+7. **Use centralized session storage:** Avoid sticky session requirements
+8. **Regular capacity planning:** Ensure load balancer can handle peak traffic
+9. **Enable logging and monitoring:** Track traffic patterns and errors
+10. **Consider Layer 7 for flexibility:** Unless performance demands Layer 4
+
+## Summary
+Load balancers are critical for:
+- High availability and fault tolerance
+- Horizontal scaling
+- Traffic management
+- Performance optimization
+
+Choose the right type (Layer 4 vs Layer 7), algorithm, and features based on your specific requirements for availability, performance, and cost.
