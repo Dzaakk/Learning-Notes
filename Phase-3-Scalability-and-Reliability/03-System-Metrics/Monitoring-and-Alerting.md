@@ -141,3 +141,71 @@ End-to-end journey of a request through distributed systems.
 ![example trace](./images/trace-example.png)
 
 **Tools:** Jaeger, Zipkin, AWS X-Ray, Google Cloud Trace, Datadog APM
+
+## Key Metrics by Component
+
+### Application Metrics
+- Request rate (RPS)
+- Error rate (%)
+- Response time (p50, p90, p99)
+- Active users/sessions
+- Business metrics (order/min, signups/hour)
+
+### Database Metrics
+- Query latency
+- Queries per second (QPS)
+- Connection pool usage
+- Cache hit rate
+- Slow query count
+- Replication lag
+- Disk usage
+
+### Cache Metrics
+- Cache hit rate
+- Cache miss rate
+- Eviction rate
+- Memory usage
+- Get/Set latency
+
+### Queue Metrics
+- Queue depth/size
+- Message processing rate
+- Message age
+- Dead letter queue size
+
+### Infrastructure Metrics
+- CPU usage (%)
+- Memory usage (%)
+- Disk I/O (IOPS, throughput)
+- Network I/O (bandwidth, packet loss)
+- Disk space usage
+
+## Monitoring Best Practices
+
+### 1. Use the USE Method (Utilization, Saturation, Errors)
+For every resource, monitor:
+- **Utilization:** % of time resource is busy
+- **Saturation:** Degree of queued work
+- **Errors:** Count of error events
+
+### 2. Use the RED Method (Rate, Errors, Duration)
+For every service, monitor:
+- **Rate:** Requests per second
+- **Errors:** Number of failed requests
+- **Duration:** Time per reqeuest (latency)
+
+### 3. Monitor What Matters 
+- Focus on user-facing metrics first
+- Monitor business KPIs (revenue, conversions)
+- Don't monitor everything (causes alert fatigue)
+
+### 4. Establish Baselines
+- Know what "normal" looks like
+- Track trends over time
+- Identify seasonal patterns
+
+### 5. Use Dashoards Effectively
+> Executive Dasboard: High-level business metrics\
+> Operations Dashboard: System health, golden signals\
+> Debug Dashboard: Detailed metrics for troubleshooting
+
