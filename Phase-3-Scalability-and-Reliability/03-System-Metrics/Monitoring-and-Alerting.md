@@ -84,3 +84,60 @@ How "full" your service is.
 > connection_pool_active / connection_pool_max
 
 **Why it matters:** Saturation predicts future problems before they occur
+
+## The Three Pillars of Observability
+Modern observability expands beyond traditional monitoring:
+
+### 1. Metrics
+Numerical measurements aggregated over time.
+
+**Characteristics:**
+- Time-series data
+- Aggregatable (sum, average, percentile)
+- Low storage cost
+- Good for dashboards and alerts
+
+**Examples:**
+- CPU usage over time
+- Request count per minute
+- Error rate percentage
+
+**Tools:** Prometheus, Graphite, InfluxDB, Datadog, CloudWatch
+
+### 2. Logs
+Discrete events with contextual information.
+
+**Characteristics:**
+- Text-based records
+- High cardinality
+- Detailed context
+- Higher storage cost
+- Good for debugging specific issues
+
+**Examples:**
+> 2026-01-17 10:30:45 ERROR User authentication failed for user_id=12345\
+> 2026-01-17 10:30:46 INFO Payment processed: transaction_id=abc123, amount=$99.99
+
+**Log Levels:**
+- **FATAL/CRITICAL:** Application crash
+- **ERROR:** Significant problem but application continues
+- **WARN:** Potential issue, degraded functionality
+- **INFO:** Important business events
+- **DEBUG:** Detailed information for troubleshooting
+- **TRACE:** Very detailed, usually disabled in production
+
+**Tools:** ELK Stack (Elasticsearch, Logstash, Kibana), Splunk, Loki, CloudWatch Logs
+
+### 3. Traces
+End-to-end journey of a request through distributed systems.
+
+**Characteristics:**
+- Shows request flow across services
+- Identifies bottlenecks
+- Helps understand dependencies
+- Correlates events across services
+
+**Example trace:**\
+![example trace](./images/trace-example.png)
+
+**Tools:** Jaeger, Zipkin, AWS X-Ray, Google Cloud Trace, Datadog APM
