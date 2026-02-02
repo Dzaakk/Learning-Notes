@@ -304,4 +304,68 @@ Combine multiple conditions:
 **pros:** Reduce false positives, more context
 **cons:** More complex to configure
 
+## Service Level Objectives (SLOs)
+**Service Level Indicator (SLI):** Quantitative measure of service level
+- Example: Request success rate, p95 latency
+
+**Service Level Objective (SLO):** Target value for SLI
+- Example: 99.9% success rate, p95 latency < 200ms
+
+**Service Level Agreement (SLA):** Contract with consequences
+- Example: 99.95% uptime or customer get credit
+
+### Example SLOs
+> Availability SLO: 99.9% of requests succeed (over 30 days)\
+> Latency SLO: 95% of requests complete in < 200ms\
+> Throughput SLO: System handles 10,000 RPS\
+>
+> Error Budget = 100% - SLO\
+> For 99.9% SLO → 0.1% error budget\
+> In 30 days → ~43 minutes of downtime allowed
+
+### Error Budget Management
+**Idea:** Use error budget to balance reliability and feature velocity.
+
+**When error budget is healthy:**
+- Ship features faster
+- Take more risks
+- Deploy more frequent
+
+**When error budget is exhausted:**
+- Freeze feature work
+- Focus on reliability
+- Slow deployment cadence
+
+## Monitoring Tools Landscape
+
+### Metrics Collection & Storage
+- **Prometheus:** Open-source, pull-based, widely adopted
+- **Graphite:** Push-based, simple, good for custom metrics
+- **InfluxDB:** Time-series database, high write throughput
+- **Datadog:** Saas, all-in-one, expensive
+- **New Relic:** SaaS, APM-focused
+
+### Log Management
+- **ELK Stack:** Elasticsearch (storage), Logstash (processing), Kibana (visualization)
+- **Splunk:** Enterprise log analytics, powerful but expensive
+- **Loki:** Prometheus-style log aggregation, lightweight
+- **Fluentd/ Fluent bit:** Log collection and forwarding
+
+### Distributed Tracing
+- **Jaeger:** CNCF project, full-featured
+- **Zipkin:** Twitter-originated, simpler
+- **AWS X-Ray:** Managed AWS service
+- **Lightstep:** SaaS, advanced analysis
+
+### Cloud Provider Solutions
+- **AWS CloudWatch:** Metrics, logs, alarms
+- **Google Cloud Operation (Stackdriver):** Unified monitoring
+- **Azure Monitor:** Metrics, logs, Application Insights
+
+### All-in-One Solutions
+- **Datadog:** Metrics, logs, traces, RUM
+- **New Relic:** APM, Infrastructure, logs
+- **Dynatrace:** AI-powered, full-stack
+- **Grafana Cloud:** Open-source based, managed
+
 
