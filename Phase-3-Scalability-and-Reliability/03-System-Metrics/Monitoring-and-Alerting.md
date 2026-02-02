@@ -204,8 +204,104 @@ For every service, monitor:
 - Track trends over time
 - Identify seasonal patterns
 
-### 5. Use Dashoards Effectively
+### 5. Use Dashboards Effectively
 > Executive Dasboard: High-level business metrics\
 > Operations Dashboard: System health, golden signals\
 > Debug Dashboard: Detailed metrics for troubleshooting
+
+## Alerting Best Practices
+
+### 1. Alert on Symptoms, Not Causes
+**Bad:**"CPU usage above 80%"\
+**Good:**"API response time p95 > 500ms for 5 minutes"
+
+**Why:** High CPU might be fine if system is handling load well. What matters is user impact.
+
+### 2. Make Alert Actionable
+Every alert should answer:
+- What is broken?
+- Why does it matter? (user impact)
+- What should I do about it?
+
+**Bad alert:**
+> Alert: High error rate
+
+**Good alert:**
+> Alert: Payment API error rate >5% for 10 miniutes\
+> Impact: Customer cannot complete purchases\
+> Runbook: https://wiki.company.com/payment-api-errors\
+> Escalation: On-call payment team
+
+### 3. Reduce Alert Fatigue
+- Remove alerts that are always firing but ignored
+- Increase thresholds for non-critical issues
+- Use appropriate severity levels
+- Implement alert aggregation/grouping
+
+### 4. Use Appropriate Thresholds
+- **Too sensitive:** Constant false positives, alert fatigue
+- **Too lenient:** Miss real issues
+
+### Tune thresholds based on:
+- Historical data
+- Impact to users
+- Time to respond
+- Cost of false positives vs false negatives
+
+## Alert Severity Levels
+
+### P1/Critical
+- Immediate response required (pages on-call)
+- System down or major user impact
+- Revenue impact
+- **Examples:** Complete service outage, payment processing failure, data loss
+
+### P2/High
+- Urgent but not immediate (notification)
+- Degraded service
+- Affects subset of users
+- **Examples:** Elevated error rates, high latency, single region outage
+
+### P3/Medium
+- Important but can wait
+- Track during business hour
+- Minor functionality impact
+- **Examples:** Increased cache miss rate, disk space warning (70% full)
+
+### P4/Low
+- Informational
+- Investigate when available
+- No user impact
+- **Examples:** Certificate expiring in 30 days, deprecated API usage
+
+## Alert Design Patterns
+
+### Threshold-Based Alerts
+> CPU usage > 80% for 5 minutes → Alert\
+> Error rate > 1% → Alert\
+> Response time p95 > 1000ms → Alert
+
+**Pros:** Simple, easy to understand\
+**Cons:** Requires manual threshold tuning, doesn't adapt to trends
+
+### Rate of Change Alerts
+> Error rate increased by 50% in last 10 minutes → Alert\
+> Traffic dropped by 80% suddenly → Alert
+
+**Pros:** Detects anomalies, adapts to baseline
+**Cons:** Can be noisy during deployment
+
+### Anomaly Detection
+Uses machine leraning to detect deviations from normal patterns.
+
+**Pros:** Adapts to patterns, catches unkown issues\
+**Cons:** Complex, requires tuning, can have false positives
+
+### Composite Alerts
+Combine multiple conditions:
+> IF error_rate > 5% AND traffic > 1000 RPS AND duration > 5 min THEN alert
+
+**pros:** Reduce false positives, more context
+**cons:** More complex to configure
+
 
