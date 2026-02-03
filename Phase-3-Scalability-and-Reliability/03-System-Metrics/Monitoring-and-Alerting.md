@@ -368,4 +368,76 @@ Combine multiple conditions:
 - **Dynatrace:** AI-powered, full-stack
 - **Grafana Cloud:** Open-source based, managed
 
+## Setting Up Monitoring (Example: Prometheus + Grafana)
 
+### Architecture 
+![architecture](./images/monitoring-architecture.png)
+
+### Sample Prometheus Alert Rules
+```yaml
+groups:
+  - name: api_alerts
+    rules:
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} requests/sec"
+          
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API latency is high"
+```
+
+## Monitoring Checklist for New Systems
+
+### Before Launch
+- Define SLIs and SLOs
+- Implement the four golden signals
+- Set up dashboards (operations and debug)
+- Create runbooks for common issues
+- Configure critical alerts with appropriate thresholds
+- Test alert delivery (email, Slack, PagerDuty)
+- Set up log aggregation
+- Implement distributed tracing (if microservices)
+- Define on-call rotation and escalation
+
+### After Launch
+- Monitor actual vs. Expected traffic patterns
+- Tune alert thresholds based on real data
+- Create custom dashboards for different personas
+- Regular alert reveiw (monthly)
+- Incident post-mortems and monitoring improvements
+- Capacity planning based on trends
+
+## Common Pitfalls
+1. **Monitoring too much:** Overwhelming dashboards, alert fatigue
+2. **Monitoring too little:** Missing critical signals
+3. **Vanity metrics:** Metrics that look god but don't matter (total users instead of active users)
+4. **No baselines:** Can't tell normal from abnormal
+5. **Ignoring alerts:** Alerts that fire constantly get ignored
+6. **No runbooks:** Alerts without clear action steps
+7. **Over-reliance on averages:** Hiding outliers (use percentiles)
+8. **Not testing alerts:** Alerts that don't fire when needed
+9. **Monitoring symptoms of symptoms:** Alert on CPU when you should alert on latency
+10. **Forgetting business metrics:** Only technical metrics, no business KPIs
+
+## Summary 
+Good monitoring and alerting:
+- Focuses on user-facing impact (golden signals)
+- Uses appropriate tools for metrics, logs, and traces
+- Has actionable alerts with clear runbooks
+- Balances sensitivity and specificity
+- Supports SLO/error budget methodology
+- Enables quick troubleshooting and debugging
+- Drives data-informed capacity planning
+- Continuously improves based on incidents and feedback
+
+**Remember:** The goal is not to collect all possible data, but to have the right insights to maintain reliability and improve user experience.
