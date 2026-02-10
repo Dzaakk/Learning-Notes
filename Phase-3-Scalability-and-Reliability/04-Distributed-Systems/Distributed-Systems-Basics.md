@@ -27,3 +27,49 @@ Place servers closer to user worldwide to reduce latency.
 Process tasks simultaneously across many machines.
 
 **Example:** Analyze 1 billion images by distribting work across 1000 machines.
+
+## Fundamental Challenges
+
+### 1. Network Unreliability
+Networks lose messages, delay them, duplicate them, or deliver them out of order. When you don't get a response, you can't tell if the request was lost, the server crashed, or the response was lost.
+
+**Implication:** Must handle retries, timeouts, and idempotency.
+
+### 2. Partial Failures
+Some nodes fail while others keep working. Unlike single machines where everything fails together, distributed systems are simultaneously healthy and broken.
+
+**Implication:** Cannot distinguish between slow nodes and crashed nodes just by observing network behavior.
+
+### 3. Clock Synchronization
+Each node has its own clock that drifts at different rates. Even with NTP, clocks are only accurate to within milliseconds at best.
+
+**Implication:** Cannot realiably order events across different machines using timestamps alone.
+
+### 4. Consistency
+When data is replicated across nodes, keeping all copies in sync is hard. Updates take time to propagate, creating temporary inconsistencies.
+
+**Implication:** Must choose between strong consistency (slower) and eventual consistency (faster but temporarily inconsistent).
+
+## The CAP Theorem
+**States:** In a distributed system, you can have at most 2 of 3 guarantees:
+
+- **Consistency (C):** All nodes see the same data at the same time
+- **Availability (A):** Every request gets a response (success or failure)
+- **Partition Tolerance (P):** System works despoite network partitions
+
+Since network partitions WILL happen, you must choose between C or A during partitions.
+
+### CP Systems (Consistency + Partition Tolerance)
+Refuse requests during partitions to maintain consistency. Sacrifice availability.
+
+**Examples:** HBase, MongoDB (default), ZooKeeper, banking systems\
+**When to use:** Correctness matters more than availability
+
+### AP Systems (Availability + Partition Tolerance)
+Keep serving requests during partitions but may return stale data. Sacrifice consistency.
+
+**Examples:** Cassandra, DynamoDB, Riak, social media feeds\
+**When to use:** Availability matters more than always having latest data
+
+### CA Systems 
+Not possible in distributed systems because partitions are inevitable. Only works on single machine (not distributed).
