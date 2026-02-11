@@ -73,3 +73,24 @@ Keep serving requests during partitions but may return stale data. Sacrifice con
 
 ### CA Systems 
 Not possible in distributed systems because partitions are inevitable. Only works on single machine (not distributed).
+
+## Communication Patterns
+
+### Synchronous (Request-Response)
+Sender waits for response before continuing.
+
+**Pros:** Simple, immediate feedback\
+**Cons:** Sender blocked, both services must be up simultaneously\
+**Example:** HTTP REST API calls
+
+### Asynchronous (Message Queue)
+Sender doesn't wait, continues immediately.
+**Pros:** Decouples services, resilient to temporary failures\
+**Cons:** More complex, delayed feedback\
+**Example:** RabbitMQ, Kafka, SQS
+
+### Publish-Subscribe
+Publishers send to topics, subscribers receive from topics they're interested in.
+**Pros:** Loose coupling, dynamic scaling\
+**Cons:** Harder to debug\
+**Example:** Kafka topics, Redis Pub/Sub
