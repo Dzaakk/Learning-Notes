@@ -94,3 +94,27 @@ Publishers send to topics, subscribers receive from topics they're interested in
 **Pros:** Loose coupling, dynamic scaling\
 **Cons:** Harder to debug\
 **Example:** Kafka topics, Redis Pub/Sub
+
+## Data Replication Strategies
+
+### Single-Leader Replication
+One leader accepts all writes, replicates to followers.
+
+**Pros:** Simple, clear ordering\
+**Cons:** Leader is bottleneck and single point of failure for writes\
+**Example:** MySQL primary-replica setup 
+
+### Multi-Leader Replication
+Multiple leaders accept writes, sync between each other.
+
+**Pros:** Better write availability, good for multi-region\
+**Cons:** Must handle write conflicts\
+**Example:** Multi-region database deployments
+
+### Leaderless Replication
+Write to any node, use quorum for reads/writes.
+
+**Pros:** High availability, no single leader to fail\
+**Cons:** Comple conflict resolution\
+**Example:**  Cassandra, DynamoDB
+
