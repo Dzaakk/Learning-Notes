@@ -118,3 +118,59 @@ Write to any node, use quorum for reads/writes.
 **Cons:** Comple conflict resolution\
 **Example:**  Cassandra, DynamoDB
 
+## Replication Lag & Consistency Models
+
+### Read-After-Write Consistency
+Users see their own writes immediately.\
+**Use case:** User updates profile and refreshes page
+
+### Monotonic Reads
+If user sees data at time T, later reads won't show older data.\
+**Use case:** Prevent seeing your own post disappear on refresh
+
+### Consistent Prefix Reads
+See casually related writes in correct order.\
+**Use case:** See question before answer in comment threads
+
+## Partitioning (Sharding)
+Split data across multiple nodes when it's too large for one machine.
+
+### Key-Range Partitioning
+Assign continuous key ranges to partitions (A-F, G-M, N-Z).
+
+**Pros:** Efficient range queries\
+**Cons:** Can be unbalanced, hot spots\
+**Example:** User database partitioned by last name
+
+### Hash Partitioning
+Hash the key, distribute by hash value.
+
+**Pros:** Even distribution\
+**Cons:** Range queries inefficient\
+**Example:** Consistent hashing in Cassandra
+
+### Consistent Hashing
+Special hash technique minimizing data movement when adding/removing nodes.
+
+**Pros:** Adding nodes only requires moving small fraction of data\
+**Cons:** More complex implementation\
+
+## State Management
+
+### Stateless Services
+No data stored between requests. Each request has all needed information.
+
+**Pros:** Easy to scale (add instances), easy failure recovery\
+**Cons:** Cannot maintain session state locally\
+**Example:** Modern web application servers
+
+### Stateful Services
+Maintain data across requests.
+
+**Pros:** Can cache data, maintain sessions\
+**Cons:** Harder to scale, need replication for reliability\
+**Example:** Databases, caches, session stores
+
+**Best Practice:** Keep application tier stateless, push state to specialized data stores.
+
+
