@@ -173,4 +173,66 @@ Maintain data across requests.
 
 **Best Practice:** Keep application tier stateless, push state to specialized data stores.
 
+## Failure Detection Timeout-Based
 
+### Timeout-Based
+No response within time = failed.\
+**Challenge:** Choosing timeout value (too short = false postivies, too long = slow detection)
+
+### Heartbeat 
+Nodes send periodic "I'm alive" messages.\
+**Better:** Establis baseline for expected behavior
+
+### Failure Detectors
+Algorithms that probabilistically detect failures.\
+**Properties:** Completeness (eventually detect failures) + Accurace (don't mark healthy nodes as failed)
+
+## Key Formulas
+
+### Little's Law
+![little's law](./images/littles-law.png)
+
+### Quorum Calculation
+![quorum calculation](./images/quorum.png)
+
+
+## Common Patterns
+- **Load Balancing:** Distribute requests across multiple servers.
+- **Service Discovery:** Find availabile service instances dynamically.
+- **Circuit Breaker:** Stop calling failing services to prevent cascade failures.
+- **Retry with Backoff:** Retry failed requests with increasing delays.
+- **Bulkhead:** Isolate resources to prevent total system failure.
+
+## Summary Table
+|Aspect|Single Machine|Distributed System|
+|-|-|-|
+|**Scaling**|Vertical (bigger machine)|Horizontal (more machines)|
+|**Failure Mode**|Everything fails together|Partial failures common|
+|**Consistency**|Always consistent|Must choose consistency level|
+|**Latency**|Microseconds|Milliseconds (network)|
+|**Complexity**|Low|High|
+|**Cost at Scale**|Very expensive|More cost-effective|
+
+## When to use Distributed Systems
+
+**Use when:**
+- Single machine cannot handle the load
+- Need geographic distributin
+- Require fault tolerance beyond single machine
+- Data too large for one machine
+
+**Avoid when:**
+- Starting small (single machine is simpler)
+- Strong consistency required with low latency (hard in distributed systems)
+- Team lacks distributed systems expertise
+- Operational complexity not justified
+
+## Key Takeaways
+1. Distributed systems trade simplicity for scalability and reliability
+2. Network failures and partial failures are inevitable
+3. CAP theorem forces choice between consistency and availability during partitions
+4. Replication provides fault tolerance but introduces consistency challenges
+5. Partitioning enables scaling beyond single machine limits
+6. Keep application layer stateless when possible
+7. Failure detection is probabilistic, not perfect
+8. Chooose the right consistency model for your use case
