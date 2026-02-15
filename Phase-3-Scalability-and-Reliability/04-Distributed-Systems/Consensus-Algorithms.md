@@ -109,5 +109,147 @@ Designed explicitly to be more understandable than Paxos while providing equival
 ### Handling Failures
 - **Follower Failure:** Leader tracks next index for each follower, sends missing entries when follower recovers.
 - **Leader Failure:** Election timeout triggers new election. New leader's log contains all committed entries (guaranteed by voting rules).
-
 - **Uncommitted Entries:** May be lost if not replicated to majority. Acceptable since never acknowledged to clients.
+
+## Paxos vs Raft Comparison
+|Aspect|Paxos|Raft|
+|-|-|-|
+|**Understandability**|Complex, abstract|Designed for clarity|
+|**Implementation**|Difficult, error-prone|More straightforward|
+|**Leadership**|Optional, multi-leader possible|Strong single leader|
+|**Log Structure**|Not explicitly defined|Core to algorithm|
+|**Flexibility**|Very flexible|More opinionated|
+|**Industry Adoption**|Many variations exist|Increasingly popular|
+|**Use Cases**|Google Chubby, Spanner|etcd, Consul, CockroachDB|
+
+**Both guarantee:**
+- Safety in face of failures
+- Tolerate up to (N-1)/2 failures in N-node cluster
+- Require majority for decisions
+
+## Byzantine Fault Tolerance (BFT)
+Handles malicious or compromised nodes that actively try to disrupt the protocol
+
+**Byzantine General Problem:** Generals must coordinate attack but some are traitors sending conflicting messages.
+
+### PBFT (Practical Byzantine Fault Tolerance)
+- Tolerates up to (N-1)/3 Byzantine failures in N nodes
+- Requires 3f+1 nodes to tolerate f failures
+- Three-phase protocol: pre-prepare, prepare, commit
+- More complex and resource-intensive than crash-fault-tolerant algorithms
+
+### When Needed
+- Cryptocurrency networks (financial incentive to cheat)
+- Systems crossing trust boundaries
+- Security-critical applications
+
+### Not Needed For
+- Most enterprise systems (trust internal nodes)
+- Performance-critical systems (overhead too high)
+- When crash failures are only concern
+
+## Quorum and Majorities
+
+### Standard Quorum
+![standard quorum](./images/standard-quorum.png)
+
+**Why majority?** Any two majorities must overlap, guaranteeing consistency.\
+**Why odd numbers?** 4-node cluster (quorum=3) tolerates same failures as 3-node cluster but costs more
+
+### Flexible Quorums
+Read and write quorums can differ if they overlap:
+
+![flexible quorum](./images/flexible-quorum.png)
+
+**Example:** 5 nodes, W=4, R=2
+- Writes must reach 4 nodes (high durability)
+- Reads only need 2 nodes (lower latency)
+- Overlap guaranteed (4+2 > 5)
+
+## Consensus in Practice
+Popular Implementations:
+
+### etcd (Raft)
+- Key-value store for Kubernetes
+- Leader election, distributed locking
+- Strong consistency guarantees
+
+### ZooKeeper (ZAB - Paxos variant)
+- Coordination service for Hadoop ecosystem
+- Configuration management, naming, synchronization
+- Widely adopted, battle-tested
+
+### Consul (Raft)
+- service discovery and configuration
+- Built-in health checking
+- Multi-datacenter support
+
+### Usage Pattern
+Application use these as "consensus as a service" rather than implementing consensus themselves
+
+## Performance Characteristics
+
+### Latency
+- Requires multiple network round trips
+- Raft: 1 RTT from leader to followers and back
+- Increases with geographic distribution
+- Typical: Single-digit to tens of milliseconds
+
+### Throughput
+- Limited by leader's processing capacity
+- Can pipeline/batch requests for better throughput
+- Network bandwidth between nodes matters
+- Typical: Thousands to tens of thousands ops/sec
+
+### Factors Affecting Performance
+- Network latency between nodes
+- Disk I/O (persisting log entries)
+- CPU for cryptographic operations (if used)
+- Cluster size (larger = more communication overhead)
+
+## When to Use Consensus
+
+### Use When:
+- Need strong consistency guarantees
+- Coordinating distributed operations
+- Leader election required
+- Distributed locking needed
+- Critical metadata management
+
+### Avoid When:
+- Eventual consistency acceptable (use simpler replication)
+- Can tolerate stale reads (read from followers)
+- Performance cost too high
+- Can design system without coordination (CDRTs, append-only)
+
+### Alternatives to Consider
+- **Eventual Consistency:** Simpler, more available, better performance
+- **CRDTs:** Conflict-free replicated data types, no consensus needed
+- **Operational Transforms:** Real-time collaboration without consensus
+- **Single-Leader with Async Replication:** Good enough for many use cases
+
+## Common Consesus Use Cases
+1. **Leader Election:** Ensure single leader for database, job scheduler
+2. **Distributed Locking:** Coordinate exclusive access to resources
+3. **Service Discovery:** Agree on avialable service instances
+4. **Configuration Management:** Consistent cluster configuration
+5. **Transaction Coordination:** Distributed transaction commit/abort
+6. **Sequence Number Generation:** Globally unique, ordered IDs
+
+## Key Takeaways
+1. **Consensus ensures agreement** despite failures and network issues
+2. **Safety vs Liveness:** Algorithms guarantee safety but liveness only under assumptions
+3. **Majority required:** Enables fault tolerance while ensuring consistency
+4. **Raft more understandable** than Paxos, both provide same guarantees
+5. **Byzantine tolerance expensive:** Only use when malicious behavior possible
+6. **Use existing implementations:** etcd, ZooKeeper, Consul instead of build your own
+7. **Performance cost:** Consensus requires coordination, adds latency
+8. **Not always necessary:** Consider if simpler alternatives work for your use case
+
+## Summary Table 
+|Algorithm|Fault Model|Tolerance|Complexity|Common Use|
+|-|-|-|-|-|
+|**Paxos**|Crash|(N-1)/2|High|Google Chubby|
+|**Raft**|Crash|(N-1)/2|Medium|etcd, Consul|
+|**PBFT**|Byzantine|(N-1)/3|Very High|Blockchains|
+|**ZAB**|Crash|(N-1)/2|Medium|Zookeper|
