@@ -183,5 +183,189 @@ kubectl set image deployment/payment payment=payment:v2
 > kubectl scale deployment order-service --replicas=10\
 > // Other services unchanged
 
-<!-- **Advantages:**
-**Disadvantages:** -->
+### 4. Technology Stack
+
+#### Monolith
+**Constraint:** Single technology for entire application
+> Application Stack:
+> - Language: Java
+> - Framework: Spring Boot
+> - Database: PostgreSQL
+> - Cache: Ehcache (in-process)
+
+**Advantages:**
+- Consistent technology
+- Team expertise focused
+- Simpler hiring
+- Shared library easy
+
+**Disadvantages:**
+- Stuck with initial choices
+- Hard to adopt new technologies
+- Not optimized for specific tasks
+- Legacy technology burden
+
+#### Microservices
+**Flexibility:** Different technology per service
+> Auth Service:     Node.js + MongoDB\
+> Order Service:    Java + PostgreSQL\
+> Payment Service:  Go + MySQL\
+> Search Service:   Python + Elasticsearch
+
+**Advantages:** 
+- Right tool for right job
+- Easy to adopt new technologies
+- Optimize per service needs
+- Experiment safely
+
+**Disadvantages:**
+- Multiple technologies to maintain
+- Requires diverse expertise
+- Harder to hire (need polyglots)
+- More operational overhead
+
+### 5. Data Management
+#### Monolith
+**Pattern:** Single shared database
+![mono data management](../../images/Phase-4-Architectural-Concepts/mono-data-management.png)
+
+**Advantages:** 
+- ACID transactions across tables
+- Joins are easy and fast
+- Data consistency guaranteed
+- Simple backup/recovery
+- Foreign keys enforce integrity
+
+**Disadvantages:**
+- Database becomes bottleneck
+- Tight coupling via database
+- Hard to scale writes
+- Schema changes affect everything
+- Can't use different database types
+
+**Example:**
+```sql
+-- Easy transaction across tables
+BEGIN TRANSACTION;
+  INSERT INTO orders (...);
+  UPDATE inventory SET stock = stock - 1;
+  INSERT INTO payments (...);
+COMMIT;
+```
+
+#### Microservices
+**Pattern:** Database per service
+
+![micro data management](../../images/Phase-4-Architectural-Concepts/microservice-data-management.png)
+**Advantages:** 
+- Service independence
+- Different database types possible
+- Easier to scale per service
+- Schema changes isolated
+- No single database bottleneck
+
+**Disadvantages:**
+- No ACID across services
+- Distributed transactions needed
+- Data duplication required
+- Eventual consistency
+- Complex queries across services
+
+**Example:**
+```js
+// Distributed transaction (Saga pattern)
+try {
+  // 1. Create order
+  await orderService.createOrder(orderData);
+  
+  // 2. Process payment
+  await paymentService.charge(paymentData);
+  
+  // 3. Update inventory
+  await inventoryService.decreaseStock(items);
+} catch (error) {
+  // Compensating transactions
+  await orderService.cancelOrder(orderId);
+  await paymentService.refund(paymentId);
+}
+```
+
+### 6. Team Structure
+
+#### Monolith
+**Organization:** Typically by technical layer
+> Frontend Team  →  UI Layer\
+> Backend Team   →  Business Logic\
+> Database Team  →  Data Layer
+
+**Advantages:** 
+- Clear technical expertise
+- Easy to standardize
+- Simple reporting structure
+
+**Disadvantages:**
+- Cross-team coordination needed for features
+- Slower feature delivery
+- Handoffs between teams
+- Unclear ownership
+
+#### Microservices
+**Organization:** By business capability (cross-functional teams)
+> Payments Team  →  Payment Service (Full Stack)\
+> Orders Team    →  Order Service (Full Stack)\
+> Auth Team      →  Auth Service (Full Stack)
+
+**Advantages:** 
+- Team autonomy
+- Faster feature delivery
+- Clear ownership
+- End-to-end responsibility
+
+**Disadvantages:**
+- Requries full-stack developers
+- Duplication across teams
+- Coordination for cross-service features
+- Potential inconsistency
+
+### 7. Failure Handling
+#### Monolith
+**Failure Impact:** All or nothing
+> Any components fails → Entire application down
+
+**Advantages:** 
+- Simpler failure modes
+- Easier to debug
+- Clear state (up or down)
+
+**Disadvantages:**
+- Single point of failure
+- One bug can crash everything
+- No partial degradation
+- Higher blast radius
+
+**Example:**
+> Payment module bug → Entire app crashses\
+> Users can't access ANY feauter 
+
+#### Microservices
+**Failure Impact:** Isolated failures
+> Payment service fails → Other services continue
+
+**Advantages:** 
+- Fault isolation 
+- Graceful degradation possible
+- Partial availability
+- Smaller blast radius
+
+**Disadvantages:**
+- Complex failure scenarios
+- Cascade failures possible
+- Harder to debug
+- Requires circuit breakers
+
+**Example**
+> Payment service down → Disable checkout\
+> But users can still:
+> - Browse products
+> - Add to cart
+> - View account
