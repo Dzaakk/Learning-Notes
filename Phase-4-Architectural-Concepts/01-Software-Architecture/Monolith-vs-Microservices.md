@@ -722,3 +722,120 @@ try {
 >- 10+ monitoring dashboards
 >- Distributed tracing needed
 >- Service mesh complexity
+
+## Real-World Examples
+
+### Example 1: Netflix 
+**Started:** Monolith (DVD rental business)
+
+**Pain points:**
+- Frequent outages
+- Hard to scale for streaming
+- Slow feature delivery
+- Database bottleneck
+
+**Migration:** 2008 - 2012 (took 4 years)
+
+**Result:**\
+> 700+ microservices
+> - Recommendation Service
+> - Video Encoding Service
+> - Payment Service
+> - User Service
+> - Content Delivery Service
+
+**Benefits:**
+- Deploy 1000+ times per day
+- Scale services independently
+- Global availability
+- Team autonomy
+
+**Challenge overcome:**
+- Built Eureka (service discovery)
+- Created Hystrix (circuit breaker)
+- Developed Chaos Monkey (failure testing)
+
+### Example 2: Amazon
+
+**Started:** Monolith (2001)
+
+**Problem:**
+> "Obidos" monolith:
+> - 12 million lines of code
+> - 10+ minute build times
+> - Frequent conflicts
+> - Can't scale teams
+
+**Solution:** Two Pizza Teams
+- Each team max 10 people
+- Own entire service
+- Independent deployment
+
+**Result:**
+> 100s of microservices
+> - Retail Service
+> - AWS Services (EC2, S3, etc.)
+> - Alexa Services
+> - Prime Video Services
+
+## Decision Framework
+
+### Checklist: Should You Use Microservices?
+Answer these questions:
+
+**Team Size**
+- Do you have 15+ developers?
+- Can you form 3+ autonomous teams?
+- Do you have DevOps expertise?
+
+**No to any?** → Stick with monolith
+
+**Application Complexity**
+- Is the domain complex with clear boundaries?
+- Do different parts have different scaling needs?
+- Do you need independent deployments?
+
+**No to all?** → Monolith is fine
+
+**Operational Readiness**
+- Do you have monitoring infrastructure?
+- Can you implement distributed tracing?
+- Is your CI/CD pipeline mature?
+
+**No to any?** → Not ready for microservices
+
+**Business Requirements**
+- Is high availability critical? (99.99%+)
+- Do you deploy multiple times per day?
+- Do you need technology diversity?
+
+**No to all?** → Microservices overhead not justified
+
+### Scoring
+- **Yes to 8+:** Microservices beneficial
+- **Yes to 4-7:** Consider hybrid approach
+- **Yes to 0-3:** Stay with monolith
+
+## Key Takeaways
+1. Start with monolith
+2. Keep it modular (prepare for extraction)
+3. Learn the domain
+4. Extract microservices only when needed
+
+## Summary Table
+|Aspect|Monolith|Microservices|
+|-|-|-|
+|**Best For**|MVPs, small teams|Large scale, big teams|
+|**Complexity**|Low|High|
+|**Development Speed**|Fast initially|Slower initially|
+|**Deployment**|Simple, risky|Complex, safer|
+|**Scaling**|Uniform|Targeted|
+|**Technology**|Uniform|Diverse|
+|**Data**|Single DB, ACID|Multiple DBs, eventual|
+|**Team Size**|< 15 devs|15+ devs|
+|**Testing**|Easy|Hard (integration)|
+|**Debugging**|Easy|Hard (distributed)|
+|**Cost**|Lower|Higher|
+|**When to Use**|Starting out|After validation|
+
+**Golden Rule:** Start with a **well-structured monolith**, and extract microservices **only when you have concrete problems** that microservices solve better than alternatives
