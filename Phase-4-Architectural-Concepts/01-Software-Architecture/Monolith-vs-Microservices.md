@@ -369,3 +369,356 @@ try {
 > - Browse products
 > - Add to cart
 > - View account
+
+## When to Use What?
+
+### Use Monolith When:
+
+#### 1. Starting New Project
+**Reason: Unkown requirements, need speed**
+> Week 1-12: Build MVP as monolith\
+> Week 13+: If success, consider microservices
+
+**Why:**
+- Faster initial development
+- Less infrastructure complexity
+- Easy to pivot
+- Lower operational cost
+
+#### 2. Small Team (< 10 developers)
+**Reason:** Not enough people to manage multiple services
+
+**Indicators:**
+- Single team can understand entire codebase
+- No specialized roles needed
+- Simple deployment is priority
+
+#### 3. Simple Application
+**Reason:** Doesn't justify microservices overhead
+
+**Examples:**
+- Internal tools
+- CRUD applications
+- Content management systems
+- Small e-commerce sites
+
+#### 4. Tight Budget
+**Reason:** Microservices require more infrastucture
+
+**Costs:**
+- More servers (each service needs hosting)
+- Service mesh, API gateway
+- Monitoring tools
+- DevOps expertise
+
+#### 5. Unkown Domain
+**Reason:** Boundaries unclear initially
+
+**Better approach:**
+1. start monolith
+2. Learn domain
+3. Identify boundaries
+4. Extract microservices
+
+### Use Microservices When:
+
+#### 1. Large Application
+**Reason:** Monolith becomes unmanageable
+
+**Indicators:**
+- Codebase > 100K lines
+- Build time > 30 minutes
+- Deploy time > 1 hour
+- Hard to understand full system
+
+#### 2. Large Team (> 15 developers)
+**Reason:** Coordination overhead in monolith
+
+**Structure:**
+> 15+ developers = 3-4 teams\
+> Each team owns 2-3 services
+
+#### 3. Different Scaling Needs
+**Reason:** Optimize resources per component
+
+**Example:**
+> Product Catalog: 10 instances (high read)\
+> Checkout: 3 instances (moderate)\
+> Admin: 1 instances (low usage)
+
+#### 4. Technology Diversity Needed
+**Reason:** Optimize per use case
+
+**Example:**
+> Search Service:     Python + Elasticsearch\
+> Real-time Chat:     Node.js + WebSocket\
+> Analytics:          Scala + Spark\
+> Core Business:      Java + Spring Boot
+
+#### 5. Independent Deployment Critical
+**Reason:** Deploy features without full system downtime
+
+**Example:**
+> Deploy new payment provider → Only payment service\
+> Black Friday prep → Scale only order service
+
+#### 6. Complex Business Domain
+**Reason:** Clear bounded contexts
+
+**Example:**
+> E-commerce Platform:
+> - User Management (separate domain)
+> - Product Catalog (separate domain)
+> - Order Processing (separate domain)
+> - Shipping (separate domain)
+> - Analytics (separate domain)
+
+## Migration Strategy: Monolith to Microservices
+
+### The Strangler Fig Pattern
+Gradually replace monolith with microservices (don't rewrite everything at once)
+
+![strangler fig pattern](../../images/Phase-4-Architectural-Concepts/strangler-fig-pattern.png)
+
+### Migration Steps
+
+#### Step 1: Identify Boundaries
+Analyze monolith to find natural boundaries
+
+**Look for:**
+- loosely coupled modules
+- Clear interfaces
+- Independent data
+- Different scaling needs
+
+**Example:**
+
+![identify boundaries example](../../images/Phase-4-Architectural-Concepts/identify-boundaries.png)
+
+#### Step 2: Extract Non-Critical Service First
+Start with least risky component
+
+**Good first candidates:**
+- New features (no migration needed)
+- Leaf services (no dependencies)
+- Clearly bounded contexts
+- Non-critical functionality
+
+**Example:**
+```js
+// Extract: Email notification service
+// Before: Part of monolith
+monolith.sendEmail(user, message);
+
+// After: Separate service
+await emailService.send({
+  to: user.email,
+  subject: 'Order Confirmation',
+  body: message
+});
+
+// Monolith now calls email service
+```
+#### Step 3: Add API Layer
+![api layer](../../images/Phase-4-Architectural-Concepts/add-api-layer.png)
+
+**Routing logic:**
+```js
+// API Gateway routes requests
+router.use('/auth', authServiceProxy);      // → Auth Service
+router.use('/products', monolithProxy);     // → Monolith
+router.use('/orders', monolithProxy);       // → Monolith
+```
+
+#### Step 4: Migrate Data Gradually
+Don't move all data at once
+
+**Dual-Write pattern:**
+```js
+// Phase 1: Write to both, read from monolith DB
+async function updateUser(userId, data) {
+  await monolithDB.users.update(userId, data);
+  await authServiceDB.users.update(userId, data);
+  return monolithDB.users.findOne(userId);
+}
+
+// Phase 2: Write to both, read from service DB
+async function updateUser(userId, data) {
+  await monolithDB.users.update(userId, data);
+  await authServiceDB.users.update(userId, data);
+  return authServiceDB.users.findOne(userId);  // Changed
+}
+
+// Phase 3: Write only to service, stop using monolith
+async function updateUser(userId, data) {
+  await authServiceDB.users.update(userId, data);
+  return authServiceDB.users.findOne(userId);
+}
+```
+
+#### Step 5: Monitor and Validate
+Ensure extracted service works correctly
+
+**Metrics to track:**
+- Error rate (should not increase)
+- Latency (might increase slightly due to network)
+- Throughput (should maintain)
+- Data consistency (monolith vs service)
+
+#### Step 6: Repeat for Next Service
+Continue extracting services one by one
+
+**Typical order:**
+1. Authentication (2-3 months)
+2. Email/Notifications (1 month)
+3. Product Catalog (3-4 months)
+4. Payment (2-3 months)
+5. Orders (4-6 months - complex)
+6. Inventory (2-3 months)
+
+## Common Pitfalls
+
+### 1. Premature Microservices
+**Mistake:** Start with microservices for new project
+
+**Why bad:**
+- Unkown requirements → wrong boundaries
+- Overhead not justified for small app
+- Slows initial development
+- Waste resources
+
+**Better:**
+> Start: Monolith MVP (3-6 months)\
+> Validate: Product-market fit\
+> Then: Consider microservices if needed
+
+### 2. Too Small Services (Nano-service)
+**Mistake:** Create service for every function
+
+**Bad example:**
+> getUserById()      → User-Getter-Service\
+> updateUserEmail()  → Email-Update-Service\
+> validateUser()     → User-Validator-Service
+
+**Result:**
+- 100+ services to manage
+- Network overhead dominates
+- Deployment nightmare
+
+**Better:**
+> User-Service handles all user operations\
+> Payment-Service handles all payment operations
+
+### 3. Shared Database
+**Mistake:** Microservices using same database
+
+**Why bad:**
+- Tight coupling via database
+- No independent deployment
+- Schema changes affect all services
+- Defeats purpose of microservices
+
+**Fix**:  Each service owns its data
+
+### 4. Distributed Monolith
+**Mistake:** Split monolith without proper boundaries
+
+**Characteristics:**
+- Service tightly coupled
+- Changes require updating multiple services
+- Sycnhronous calls everywhere
+- Shared libraries with business logic
+
+**Example:**
+```js
+// Order Service calls Payment Service
+const payment = await paymentService.process(data);
+
+// Payment Service calls Inventory Service
+const stock = await inventoryService.check(items);
+
+// Inventory Service calls Order Service (circular!)
+const order = await orderService.getDetails(orderId);
+```
+
+**Result:** Worst of both worlds
+- Monolith complexity (coupled)
+- Microservices overhead (network, deployment)
+
+### 5. No API Gateway
+**Mistake:** Clients call services directly
+
+![call directyly](../../images/Phase-4-Architectural-Concepts/call-service-directly.png)
+
+**Problems:**
+- Clients know service locations
+- No centralized authentication
+- No rate limitng
+- Hard to change service boundaries
+
+**Fix:** Use API Gateway
+
+![call using api gateway](../../images/Phase-4-Architectural-Concepts/use-api-gateway.png)
+
+### 6. Not Handling Failures
+**Mistake:** Assume network calls always succeed
+```js
+// Bad: No error handling
+const user = await authService.getUser(userId);
+const orders = await orderService.getOrders(user.id);
+```
+
+**What happens:**
+- Auth service down → Entire flow fails
+- Cascade failures
+- Poor user experience
+
+**Fix:** Handle failures gracefully
+```js
+// Good: Circuit breaker, fallback
+try {
+  const user = await circuitBreaker.call(() =>
+    authService.getUser(userId)
+  );
+  
+  if (!user) {
+    return cachedUserData(userId);
+  }
+  
+  const orders = await orderService.getOrders(user.id);
+  return { user, orders };
+  
+} catch (error) {
+  logger.error('Service failure', error);
+  return {
+    user: cachedUserData(userId),
+    orders: []  // Graceful degradation
+  };
+}
+```
+
+### 7. Ignoring Operational Complexity
+**Mistake:** Focus only on development, ignore opeartions
+
+**Microservices require:**
+- Service discovery
+- Load balancing per service
+- Distributed tracing
+- Centralized logging
+- Monitoring per service
+- CI/CD pipelines
+- Container orchestration (Kubernetes)
+
+**Cost:** 3-5x operational overhead vs monolith
+
+**Reality Check:**
+>Monolith:
+>- 1 deployment pipeline
+>- 1 monitoring dashboard
+>- 1 log file
+>
+>10 Microservices:
+>- 10 deployment pipelines
+>- 10+ monitoring dashboards
+>- Distributed tracing needed
+>- Service mesh complexity
