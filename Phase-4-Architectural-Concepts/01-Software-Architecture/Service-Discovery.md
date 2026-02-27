@@ -935,3 +935,127 @@ func goodHealthHandler(db *sql.DB) http.HandlerFunc {
     }
 }
 ```
+
+## Load Balancing Strategies
+When multiple instances exist, how to choose which one?
+
+### 1. Round Robin
+```go
+package main
+
+type RoundRobinBalancer struct {
+    currentIndex int
+}
+
+func NewRoundRobinBalancer() *RoundRobinBalancer {
+    return &RoundRobinBalancer{currentIndex: 0}
+}
+
+func (rb *RoundRobinBalancer) SelectInstance(instances []ServiceInstance) ServiceInstance {
+    instance := instances[rb.currentIndex]
+    rb.currentIndex = (rb.currentIndex + 1) % len(instances)
+    return instance
+}
+
+// Usage
+instances := discovery.GetInstances("order-service")
+instance := balancer.SelectInstance(instances)
+```
+
+**Pros:** Simple, fair distribution\
+**Cons:** Ignores instance load
+
+### 2. Random
+```go
+import "math/rand"
+
+func SelectRandom(instances []ServiceInstance) ServiceInstance {
+    index := rand.Intn(len(instances))
+    return instances[index]
+}
+```
+
+**Pros:** Simple, good distribution at scale\
+**Cons:** Can be uneven short-term
+
+### 3. Least Connections
+```go
+type ServiceInstance struct {
+    ID                string
+    URL               string
+    ActiveConnections int
+}
+
+func SelectLeastConnections(instances []ServiceInstance) ServiceInstance {
+    least := instances[0]
+    for _, instance := range instances[1:] {
+        if instance.ActiveConnections < least.ActiveConnections {
+            least = instance
+        }
+    }
+    return least
+}
+```
+
+**Pros:** Load-aware\
+**Cons:** Requires tracking connections
+
+### 4. Weighted
+```go
+type WeightedInstance struct {
+    ID     string
+    URL    string
+    Weight int
+}
+
+func SelectWeighted(instances []WeightedInstance) WeightedInstance {
+    // Calculate total weight
+    totalWeight := 0
+    for _, instance := range instances {
+        totalWeight += instance.Weight
+    }
+    
+    // Random selection based on weights
+    random := rand.Intn(totalWeight)
+    
+    for _, instance := range instances {
+        random -= instance.Weight
+        if random < 0 {
+            return instance
+        }
+    }
+    
+    return instances[0]
+}
+
+// Instance config
+instances := []WeightedInstance{
+    {ID: "1", Weight: 3}, // Gets 60% of traffic (3/5)
+    {ID: "2", Weight: 2}, // Gets 40% of traffic (2/5)
+}
+```
+### 5. Zone-Aware
+```go
+type ZoneInstance struct {
+    ID   string
+    URL  string
+    Zone string
+}
+
+func SelectSameZone(instances []ZoneInstance, clientZone string) ZoneInstance {
+    // Prefer instances in same zone (lower latency)
+    var sameZone []ZoneInstance
+    for _, instance := range instances {
+        if instance.Zone == clientZone {
+            sameZone = append(sameZone, instance)
+        }
+    }
+    
+    if len(sameZone) > 0 {
+        return SelectRandom(sameZone)
+    }
+    
+    // Fallback to any instance
+    return SelectRandom(instances)
+}
+```
