@@ -696,3 +696,614 @@ func main() {
 - Query complexity issues
 
 **Best For:** Frontend heavy apps, mobile apps (reduce bandwith), complex data requirements
+
+## Asynchronous Communication
+
+### 1. Message Queue
+**Message Queue** decouples services by allowing them to communicate asynchronously through messages.
+
+**RabbitMQ Example**
+```go
+// Producer - sends messages
+package main
+
+import (
+    "encoding/json"
+    "log"
+    
+    "github.com/streadway/amqp"
+)
+
+type OrderEvent struct {
+    OrderID   string  `json:"order_id"`
+    UserID    string  `json:"user_id"`
+    Amount    float64 `json:"amount"`
+    Timestamp int64   `json:"timestamp"`
+}
+
+func main() {
+    // Connect to RabbitMQ
+    conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer conn.Close()
+    
+    // Create channel
+    ch, err := conn.Channel()
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer ch.Close()
+    
+    // Declare queue
+    queue, err := ch.QueueDeclare(
+        "orders",  // name
+        true,      // durable
+        false,     // delete when unused
+        false,     // exclusive
+        false,     // no-wait
+        nil,       // arguments
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    // Publish message
+    event := OrderEvent{
+        OrderID:   "order-123",
+        UserID:    "user-456",
+        Amount:    99.99,
+        Timestamp: time.Now().Unix(),
+    }
+    
+    body, _ := json.Marshal(event)
+    
+    err = ch.Publish(
+        "",           // exchange
+        queue.Name,   // routing key
+        false,        // mandatory
+        false,        // immediate
+        amqp.Publishing{
+            DeliveryMode: amqp.Persistent,
+            ContentType:  "application/json",
+            Body:         body,
+        },
+    )
+    
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    log.Printf("Sent: %s", body)
+}
+```
+```go
+// Consumer - receives messages
+package main
+
+import (
+    "encoding/json"
+    "log"
+    "time"
+    
+    "github.com/streadway/amqp"
+)
+
+type OrderEvent struct {
+    OrderID   string  `json:"order_id"`
+    UserID    string  `json:"user_id"`
+    Amount    float64 `json:"amount"`
+    Timestamp int64   `json:"timestamp"`
+}
+
+func main() {
+    conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer conn.Close()
+    
+    ch, err := conn.Channel()
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer ch.Close()
+    
+    queue, err := ch.QueueDeclare(
+        "orders",
+        true,
+        false,
+        false,
+        false,
+        nil,
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    // Set QoS (prefetch count)
+    err = ch.Qos(
+        1,     // prefetch count
+        0,     // prefetch size
+        false, // global
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    // Consume messages
+    msgs, err := ch.Consume(
+        queue.Name,
+        "",    // consumer
+        false, // auto-ack
+        false, // exclusive
+        false, // no-local
+        false, // no-wait
+        nil,   // args
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    log.Println("Waiting for messages...")
+    
+    forever := make(chan bool)
+    
+    go func() {
+        for msg := range msgs {
+            var event OrderEvent
+            if err := json.Unmarshal(msg.Body, &event); err != nil {
+                log.Printf("Error parsing message: %v", err)
+                msg.Nack(false, false)
+                continue
+            }
+            
+            log.Printf("Received order: %+v", event)
+            
+            // Process order
+            processOrder(&event)
+            
+            // Acknowledge message
+            msg.Ack(false)
+        }
+    }()
+    
+    <-forever
+}
+
+func processOrder(event *OrderEvent) {
+    log.Printf("Processing order %s for user %s", event.OrderID, event.UserID)
+    // Business logic here
+    time.Sleep(2 * time.Second) // Simulate work
+    log.Printf("Order %s processed", event.OrderID)
+}
+```
+**Advantages:**
+- Decoupling (services don't need to know each other)
+- Asynchronous processing
+- Load leveling (queue buffers spikes)
+- Retry logic built-in
+- Guaranteed delivery
+
+**Disadvantages:**
+- Added complexity
+- Message broker is dependency
+- Eventual consistency
+- Debugging harder
+
+**Best For:** Event processing, background jobs, async workflows, handling spikes
+
+### 2. Publish-Subscribe (Pub/Sub)
+**Pub/Sub** allows multiple subscribers to receive the same message from a publisher.
+
+**Redis Pub/Sub Example**
+```go
+// Publisher
+package main
+
+import (
+    "context"
+    "encoding/json"
+    "log"
+    "time"
+    
+    "github.com/go-redis/redis/v8"
+)
+
+type Event struct {
+    Type      string `json:"type"`
+    Data      string `json:"data"`
+    Timestamp int64  `json:"timestamp"`
+}
+
+func main() {
+    ctx := context.Background()
+    
+    rdb := redis.NewClient(&redis.Options{
+        Addr: "localhost:6379",
+    })
+    
+    // Publish events
+    for i := 0; i < 10; i++ {
+        event := Event{
+            Type:      "user.created",
+            Data:      fmt.Sprintf("User %d", i),
+            Timestamp: time.Now().Unix(),
+        }
+        
+        payload, _ := json.Marshal(event)
+        
+        err := rdb.Publish(ctx, "events", payload).Err()
+        if err != nil {
+            log.Printf("Error publishing: %v", err)
+        }
+        
+        log.Printf("Published: %s", payload)
+        time.Sleep(1 * time.Second)
+    }
+}
+```
+```go
+// Subscriber
+package main
+
+import (
+    "context"
+    "encoding/json"
+    "log"
+    
+    "github.com/go-redis/redis/v8"
+)
+
+type Event struct {
+    Type      string `json:"type"`
+    Data      string `json:"data"`
+    Timestamp int64  `json:"timestamp"`
+}
+
+func main() {
+    ctx := context.Background()
+    
+    rdb := redis.NewClient(&redis.Options{
+        Addr: "localhost:6379",
+    })
+    
+    // Subscribe to channel
+    pubsub := rdb.Subscribe(ctx, "events")
+    defer pubsub.Close()
+    
+    ch := pubsub.Channel()
+    
+    log.Println("Subscribed to events channel...")
+    
+    for msg := range ch {
+        var event Event
+        if err := json.Unmarshal([]byte(msg.Payload), &event); err != nil {
+            log.Printf("Error parsing: %v", err)
+            continue
+        }
+        
+        log.Printf("Received event: %+v", event)
+        
+        // Process event
+        handleEvent(&event)
+    }
+}
+
+func handleEvent(event *Event) {
+    switch event.Type {
+    case "user.created":
+        log.Printf("New user: %s", event.Data)
+        // Send welcome email, etc.
+    case "order.placed":
+        log.Printf("New order: %s", event.Data)
+        // Process order
+    default:
+        log.Printf("Unknown event type: %s", event.Type)
+    }
+}
+```
+
+**Advantages:**
+- One-to-many communication
+- Loose coupling
+- Multiple subscribers per topic
+- Real-time updates
+
+**Disadvantages:**
+- No message persistence (Redis)
+- No delivery guarantee
+- Message order not guaranteed
+
+**Best For:** Broadcasting events, real-time notifications, event-driven architecture
+
+### 3. Event Streaming (Kafka)
+**Event Streaming** provides durable, ordered event logs that multiple consumers can read at their own pace.
+
+**Kafka Producer**
+```go
+package main
+
+import (
+    "context"
+    "encoding/json"
+    "log"
+    "time"
+    
+    "github.com/segmentio/kafka-go"
+)
+
+type OrderEvent struct {
+    OrderID   string  `json:"order_id"`
+    Status    string  `json:"status"`
+    Amount    float64 `json:"amount"`
+    Timestamp int64   `json:"timestamp"`
+}
+
+func main() {
+    // Create Kafka writer
+    writer := kafka.NewWriter(kafka.WriterConfig{
+        Brokers:  []string{"localhost:9092"},
+        Topic:    "orders",
+        Balancer: &kafka.LeastBytes{},
+    })
+    defer writer.Close()
+    
+    // Produce events
+    for i := 0; i < 10; i++ {
+        event := OrderEvent{
+            OrderID:   fmt.Sprintf("order-%d", i),
+            Status:    "pending",
+            Amount:    float64(i * 10),
+            Timestamp: time.Now().Unix(),
+        }
+        
+        value, _ := json.Marshal(event)
+        
+        err := writer.WriteMessages(context.Background(),
+            kafka.Message{
+                Key:   []byte(event.OrderID),
+                Value: value,
+            },
+        )
+        
+        if err != nil {
+            log.Printf("Failed to write: %v", err)
+        } else {
+            log.Printf("Produced: %s", value)
+        }
+        
+        time.Sleep(1 * time.Second)
+    }
+}
+```
+**Kafka Consumer**
+```go
+package main
+
+import (
+    "context"
+    "encoding/json"
+    "log"
+    
+    "github.com/segmentio/kafka-go"
+)
+
+type OrderEvent struct {
+    OrderID   string  `json:"order_id"`
+    Status    string  `json:"status"`
+    Amount    float64 `json:"amount"`
+    Timestamp int64   `json:"timestamp"`
+}
+
+func main() {
+    // Create Kafka reader
+    reader := kafka.NewReader(kafka.ReaderConfig{
+        Brokers:   []string{"localhost:9092"},
+        Topic:     "orders",
+        GroupID:   "order-processor",
+        MinBytes:  10e3, // 10KB
+        MaxBytes:  10e6, // 10MB
+        CommitInterval: time.Second,
+    })
+    defer reader.Close()
+    
+    log.Println("Consuming messages...")
+    
+    for {
+        msg, err := reader.ReadMessage(context.Background())
+        if err != nil {
+            log.Printf("Error reading: %v", err)
+            continue
+        }
+        
+        var event OrderEvent
+        if err := json.Unmarshal(msg.Value, &event); err != nil {
+            log.Printf("Error parsing: %v", err)
+            continue
+        }
+        
+        log.Printf("Consumed: %+v (partition=%d, offset=%d)",
+            event, msg.Partition, msg.Offset)
+        
+        // Process event
+        processOrder(&event)
+    }
+}
+
+func processOrder(event *OrderEvent) {
+    log.Printf("Processing order: %s", event.OrderID)
+    // Business logic here
+}
+```
+
+**Advantages:**
+- Durable (persisted to disk)
+- High throughput
+- Ordered within partition
+- Replay capability
+- Multiple capability
+- Multiple consumers with offsets
+
+**Disadvantages:**
+- Complex to setup/manage
+- Requires Kafka cluster
+- Eventual consistency
+- Steeper learning curve
+
+**Best For:** Event sourcing, log aggregation, stream processing, high-throughput events
+
+## Comparison Matrix
+
+### Synchronous vs Asynchronous
+|Aspect|Synchronous|Asynchronous|
+|-|-|-|
+|**Coupling**|Tight|Loose|
+|**Response**|Immediate|Eventual|
+|**Failure**|Cascading|Isolated|
+|**Complexity**|Lower|Higher|
+|**Performance**|Request waits|Non-blocking|
+|**Use Case**|CRUD, queries|Events, jobs|
+
+### Protocol Comparison
+|Protocol|Type|Performance|Complexity|Best For|
+|-|-|-|-|-|
+|**REST**|Sync|Medium|Low|Public APIs, CRUD|
+|**gRPC**|Sync|High|Medium|Service-to-service|
+|**GraphQL**|Sync|Medium|High|Complex queries, frontend|
+|**Queue**|Async|High|Medium|Background jobs|
+|**Pub/Sub**|Async|High|Medium|Broadcasting|
+|**Kafka**|Async|Very High|High|Event streaming|
+
+## Hybrid Patterns
+
+### Request Response with Callback
+
+**Scenario**\
+Client needs result but doesn't want to wait.
+```go
+// Client initiates request
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+type AsyncRequest struct {
+    JobID       string `json:"job_id"`
+    CallbackURL string `json:"callback_url"`
+    Data        string `json:"data"`
+}
+
+func submitJob(data string, callbackURL string) (string, error) {
+    req := AsyncRequest{
+        JobID:       generateID(),
+        CallbackURL: callbackURL,
+        Data:        data,
+    }
+    
+    body, _ := json.Marshal(req)
+    resp, err := http.Post("http://worker:8080/jobs",
+        "application/json",
+        bytes.NewReader(body))
+    
+    if err != nil {
+        return "", err
+    }
+    defer resp.Body.Close()
+    
+    var result struct {
+        JobID string `json:"job_id"`
+    }
+    json.NewDecoder(resp.Body).Decode(&result)
+    
+    return result.JobID, nil
+}
+
+// Server processes and calls back
+func processJob(job *AsyncRequest) {
+    // Do heavy processing
+    result := heavyComputation(job.Data)
+    
+    // Call back to client
+    callback := map[string]interface{}{
+        "job_id": job.JobID,
+        "status": "completed",
+        "result": result,
+    }
+    
+    body, _ := json.Marshal(callback)
+    http.Post(job.CallbackURL, "application/json", bytes.NewReader(body))
+}
+```
+
+### Event Driven with CQRS
+
+**Command Service (Writes)**
+```go
+package main
+
+type CommandHandler struct {
+    eventBus EventBus
+}
+
+func (h *CommandHandler) CreateOrder(cmd *CreateOrderCommand) error {
+    // Validate command
+    if err := cmd.Validate(); err != nil {
+        return err
+    }
+    
+    // Create order
+    order := &Order{
+        ID:     generateID(),
+        UserID: cmd.UserID,
+        Amount: cmd.Amount,
+        Status: "pending",
+    }
+    
+    // Save to database
+    if err := h.repo.Save(order); err != nil {
+        return err
+    }
+    
+    // Publish event
+    event := &OrderCreatedEvent{
+        OrderID: order.ID,
+        UserID:  order.UserID,
+        Amount:  order.Amount,
+    }
+    
+    h.eventBus.Publish("order.created", event)
+    
+    return nil
+}
+```
+
+**Query Service (Reads)**
+```go
+package main
+
+type QueryHandler struct {
+    readDB ReadDatabase
+}
+
+func (h *QueryHandler) GetOrders(userID string) ([]*OrderView, error) {
+    // Read from optimized read database
+    return h.readDB.GetOrdersByUser(userID)
+}
+
+// Event listener updates read database
+func (h *QueryHandler) OnOrderCreated(event *OrderCreatedEvent) {
+    view := &OrderView{
+        OrderID: event.OrderID,
+        UserID:  event.UserID,
+        Amount:  event.Amount,
+        Status:  "pending",
+    }
+    
+    h.readDB.Insert(view)
+}
+```
