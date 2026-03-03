@@ -1307,3 +1307,256 @@ func (h *QueryHandler) OnOrderCreated(event *OrderCreatedEvent) {
     h.readDB.Insert(view)
 }
 ```
+
+## Best Practices
+
+### 1. Use Timeouts
+```go
+// Always set timeouts
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+
+resp, err := client.GetUser(ctx, &pb.GetUserRequest{Id: 123})
+```
+
+### 2. Implement Retries
+```go
+func callWithRetry(fn func() error, maxRetries int) error {
+    var err error
+    for i := 0; i < maxRetries; i++ {
+        err = fn()
+        if err == nil {
+            return nil
+        }
+        
+        // Exponential backoff
+        backoff := time.Duration(1<<uint(i)) * time.Second
+        time.Sleep(backoff)
+    }
+    return err
+}
+```
+
+### 3. Circuit Breaker
+```go
+type CircuitBreaker struct {
+    maxFailures  int
+    failures     int
+    state        string
+    lastFailure  time.Time
+    resetTimeout time.Duration
+}
+
+func (cb *CircuitBreaker) Call(fn func() error) error {
+    if cb.state == "open" {
+        if time.Since(cb.lastFailure) > cb.resetTimeout {
+            cb.state = "half-open"
+        } else {
+            return fmt.Errorf("circuit breaker open")
+        }
+    }
+    
+    err := fn()
+    
+    if err != nil {
+        cb.failures++
+        cb.lastFailure = time.Now()
+        
+        if cb.failures >= cb.maxFailures {
+            cb.state = "open"
+        }
+        return err
+    }
+    
+    cb.failures = 0
+    cb.state = "closed"
+    return nil
+}
+```
+
+### 4. Idempotency
+```go
+// Use idempotency keys for retryable operations
+type PaymentRequest struct {
+    IdempotencyKey string  `json:"idempotency_key"`
+    Amount         float64 `json:"amount"`
+}
+
+func processPayment(req *PaymentRequest) error {
+    // Check if already processed
+    if result := cache.Get(req.IdempotencyKey); result != nil {
+        return nil // Already processed
+    }
+    
+    // Process payment
+    result := chargeCard(req.Amount)
+    
+    // Cache result
+    cache.Set(req.IdempotencyKey, result, 24*time.Hour)
+    
+    return nil
+}
+```
+
+### 5. Message Deduplication
+```go
+type MessageProcessor struct {
+    processed map[string]bool
+    mu        sync.Mutex
+}
+
+func (mp *MessageProcessor) ProcessMessage(msgID string, handler func()) {
+    mp.mu.Lock()
+    
+    if mp.processed[msgID] {
+        mp.mu.Unlock()
+        return // Already processed
+    }
+    
+    mp.processed[msgID] = true
+    mp.mu.Unlock()
+    
+    handler()
+}
+```
+
+## Decision Guide
+
+### Choose REST When:
+- Building public APIs
+- CRUD operations
+- Need caching
+- Simple request-response
+- Human readable format needed
+
+### Choose gRPC When:
+- Internal service communication
+- Need high performance
+- Streaming required
+- Strong typing important
+- Polyglot services
+
+### Choose Message Queue When:
+- Asynchronous processing
+- Need guaranteed delivery
+- Background jobs
+- Handling traffic spikes
+- Decoupling services
+
+### Choose Pub/Sub When:
+- Broadcasting events
+- Multiple subscribers
+- Real-time notifications
+- Event driver architecture
+
+### Choose Kafka When:
+- Event sourcing
+- High-throuhgput events
+- Need event replay
+- Stream processing
+- Audit logs
+
+## Common Pitfalls
+
+### 1. Synchronous Chains
+```go
+// Bad: Synchronous cascade
+func handleOrder(order *Order) error {
+    if err := inventoryService.Reserve(order.Items); err != nil {
+        return err
+    }
+    
+    if err := paymentService.Charge(order); err != nil {
+        inventoryService.Release(order.Items)
+        return err
+    }
+    
+    if err := shippingService.Schedule(order); err != nil {
+        paymentService.Refund(order)
+        inventoryService.Release(order.Items)
+        return err
+    }
+    
+    return nil
+}
+
+// Good: Async with message queue
+func handleOrder(order *Order) error {
+    event := &OrderCreatedEvent{Order: order}
+    return messageQueue.Publish("order.created", event)
+}
+
+// Separate workers handle each step
+```
+
+### 2. Missing Timeouts
+```go
+// Bad: No timeout
+resp, err := http.Get(url)
+
+// Good: With timeout
+client := &http.Client{Timeout: 5 * time.Second}
+resp, err := client.Get(url)
+```
+
+### 3. No Error Handling
+```go
+// Bad: Ignore errors
+msg.Ack(false)
+
+// Good: Handle failures
+if err := processMessage(msg); err != nil {
+    log.Printf("Processing failed: %v", err)
+    msg.Nack(false, true) // Requeue
+} else {
+    msg.Ack(false)
+}
+```
+
+### 4. Large Synchronous Payloads
+```go
+// Bad: Send 10MB file synchronously
+func uploadFile(file []byte) error {
+    return http.Post("/upload", "application/octet-stream", bytes.NewReader(file))
+}
+
+// Good: Async upload with progress
+func uploadFileAsync(file []byte) (string, error) {
+    jobID := generateID()
+    go func() {
+        // Upload in background
+        uploadToS3(file)
+        notifyCompletion(jobID)
+    }()
+    return jobID, nil
+}
+```
+
+## Key Takeaways
+
+### Communication Patterns Summary
+**Synchronous:**
+- REST - Simple, widely used
+- gRPC - High performance, typed
+- GraphQL - Flexible queries
+
+**Asynchronous:**
+- Message Queue - Reliable, decoupled
+- Pub/Sub - Broadcasting, real-time
+- Kafka - High throughput, streaming
+
+### Best Practices:
+- Always use timeouts
+- Implement retries with backoff
+- Use circuit breakers
+- Make operations idempotent
+- Handle errors properly
+- Monitor all communication
+- Use async for long operations
+- Choose based on use case
+
+**Remember:**
+- **Synchronous** = Simple but coupled
+- **Asynchronous** = Complex but resilient
+- **Hybrid** = Best of both worlds
+- **No silver bullet** = Choose based on requirements
