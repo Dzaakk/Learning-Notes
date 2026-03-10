@@ -135,3 +135,23 @@ func main() {
 - Not ideal for simple task queues
 - Overkill for low volume systems
 - Harder to implement request/reply (RPC) patterns
+
+## RabbitMQ
+
+### Core Idea
+RabbitMQ is a **message broker** built around the AMQP protocol. Producers send messages to an **Exchange**, which routes them to **Queues** based on routing rules. Consumers subscribe to queues.
+
+![rabitmq core idea](../../images/Phase-4-Architectural-Concepts/rabbitmq-core-idea.png)
+
+Unlike Kafka, once a message is ACKed by a consumer, it's **gone**. RabbitMQ is designed for task distribution, not event streaming.
+
+### Key Concepts
+**Exchange** Receives messages from producers and routes them to queues. There are 4 types:
+
+|Exchange Type|Routing Logic|Use Case|
+|-|-|-|
+|**Direct**|Route by exact routing key|Task queues, point to point|
+|**Fanout**|Broadcast to all bound queues|Notifications, pub/sub|
+|**Topic**|Route by pattern matching (`*.error`,`order.#`)|Flexible routing|
+|**Headers**|Route by message headers|Rarely used|
+
