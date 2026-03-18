@@ -18,7 +18,7 @@ Think of it like ordering food:
 - **Response** = your food.
 
 ## Visual Diagram
-![request-response](./images/request-response.excalidraw.png)
+![request-response](../../images/Phase-1-Foundations/request-response.png)
 
 ## Real-World Examples
 - **Netflix**: Your app  (client) requests movie data from Netflix servers.

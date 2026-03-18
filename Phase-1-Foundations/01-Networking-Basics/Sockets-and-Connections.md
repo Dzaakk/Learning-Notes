@@ -15,7 +15,7 @@ Socket:  Your phone number + extension.
 - **Socket**: Complete address so messages reach the right place.
 
 ### Visual Diagram
-![socket](./images/Socket.excalidraw.png)
+![socket](../../images/Phase-1-Foundations/socket.png)
 
 ### Real-World Examples
 - **Web Server**: Listens on port 80 (HTTP) or 443 (HTTPS).

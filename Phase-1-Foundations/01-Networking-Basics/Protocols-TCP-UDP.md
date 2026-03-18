@@ -15,7 +15,7 @@ Imagine you send a 5-page letter via registered mail:
 - If a page is missing, the postal service **re-sends it**.
 
 ### TCP Three-Way Handshake (Connection Setup)
-![TCP Three-Way Handshake](./images/three-way-handshake.excalidraw.png)
+![TCP Three-Way Handshake](../../images/Phase-1-Foundations/three-way-handshake.png)
 #### Steps:
 1. **SYN** (Synchronize): Client initiates connection.
 2. **SYN-ACK** (Synchronize-Acknowledge): Server ackonwledges and agrees.
@@ -61,7 +61,7 @@ You shout a message across crowded room:
 - **Speed matters more than accuracy**.
 
 ### Visual Diagram (UDP vs TCP)
-![udp vs tcp](./images/UDP%20vs%20TCP.excalidraw.png)
+![udp vs tcp](../../images/Phase-1-Foundations/udp-vs-tcp.png)
 
 ### Real-World Examples
 |Application|Why UDP?|

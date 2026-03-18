@@ -5,7 +5,7 @@ Cookies, Sessions & Authentication
 **HTTP is stateless**: the server doesn't remember you between requests.
 
 ### The Problem Visualized
-![stateless-problem](./images/stateless-problem.excalidraw.png)
+![stateless-problem](../../images/Phase-1-Foundations/stateless-problem.png)
 
 **Solution**? We need a way to "remember" the user.
 
@@ -45,7 +45,7 @@ Cookie: user_id=12345; theme=dark
 ```
 
 ### Visual Flow
-![browser-cookie](./images/browser-cookie.excalidraw.png)
+![browser-cookie](../../images/Phase-1-Foundations/browser-cookie.png)
 
 ### Cookie Attributes (Security is Critical!)
 |Attribute|Purpose|Example|
@@ -87,7 +87,7 @@ Set-Cookie: session_id=abc123; HttpOnly; Secure; SameSite=Strict
 A **session** is server-side storage that remembers user state.
 
 ### How Sessions Work
-![sessions](./images/Sessions.excalidraw.png)
+![sessions](../../images/Phase-1-Foundations/sessions.png)
 
 ### Session Storage Options
 |Storage|Speed|Scalability|Persistence|
@@ -142,16 +142,16 @@ A **session** is server-side storage that remembers user state.
 |Authorization|"What can you do?"|Admin can delete posts, user cannot|
 
 ### Visual Flow
-![auth-flow](./images/auth-flow.excalidraw.png)
+![auth-flow](../../images/Phase-1-Foundations/auth-flow.png)
 
 ### Real-World Example (Google Drive)
-![auth-example](./images/auth-example.excalidraw.png)
+![auth-example](../../images/Phase-1-Foundations/auth-example.png)
 
 ## JWT (JSON Web Token) - Modern Authentication
 **JWT** is a self-contained token that stores user info **inside the token itself**.
 
 ### Structure of JWT
-![jwt-structure](./images/jwt-structure.excalidraw.png)
+![jwt-structure](../../images/Phase-1-Foundations/jwt-structure.png)
 
 #### Decoded JWT Example
 ```json
@@ -177,7 +177,7 @@ HMACSHA256(
 ```
 
 ### How JWT Works
-![how-jwt-works](./images/how-jwt-works.excalidraw.png)
+![how-jwt-works](../../images/Phase-1-Foundations/how-jwt-works.png)
 
 ### JWT vs Session Comparison
 |Feature|Session + Cookie|JWT|
@@ -226,10 +226,10 @@ You want to print photos at a shop:
 - **Good way (OAuth)**: Shop asks permission to access only photos (limited access).
 
 ### OAuth Flow ("Sign in with Google")
-![oauth-flow](./images/oauth-flow.excalidraw.png)
+![oauth-flow](../../images/Phase-1-Foundations/oauth-flow.png)
 
 ### Visual OAuth Flow
-![visual-oauth-flow](./images/visual-oauth-flow.excalidraw.png)
+![visual-oauth-flow](../../images/Phase-1-Foundations/visual-oauth-flow.png)
 
 ### OAuth Roles
 |Role|Description|Example|
@@ -258,27 +258,27 @@ You want to print photos at a shop:
 ## Common Authentication Patterns
 
 ### Pattern 1: Session-Based (Traditional)
-![session-based](./images/session-based.excalidraw.png)
+![session-based](../../images/Phase-1-Foundations/session-based.png)
 
 ### Pattern 2: JWT-Based (Modern APIs)
-![jwt-based](./images/jwt-based.excalidraw.png)
+![jwt-based](../../images/Phase-1-Foundations/jwt-based.png)
 
 ### Pattern 3: Hybrid (Best of Both)
-![hybrid](./images/hybrid.excalidraw.png)
+![hybrid](../../images/Phase-1-Foundations/hybrid.png)
 
 ## Security Best Practices (Critical!)
 
 ### 1. XSS (Cross-Site Scripting)
-![xss](./images/xss.excalidraw.png)
+![xss](../../images/Phase-1-Foundations/xss.png)
 
 ### 2. CSRF (Cross-Site Request Forgery)
-![csrf](./images/csrf.excalidraw.png)
+![csrf](../../images/Phase-1-Foundations/csrf.png)
 
 ### 3. Session Hijacking
-![session-hijacking](./images/session-hijacking.excalidraw.png)
+![session-hijacking](../../images/Phase-1-Foundations/session-hijacking.png)
 
 ## Engineering Decision Tree
-![engineering-decision-tree](./images/engineering-decision-tree.excalidraw.png)
+![engineering-decision-tree](../../images/Phase-1-Foundations/engineering-decision-tree.png)
 
 ## Real-World Architecture Examples
 

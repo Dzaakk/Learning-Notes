@@ -228,7 +228,7 @@ Free sample at supermarket:
 Rate limit = "100 requests per minute per user"
 
 ### How Rate Limiting Works
-![rate-limit-flow](./images/rate-limit-process.excalidraw.png)
+![rate-limit-flow](../../images/Phase-1-Foundations/rate-limit-process.png)
 
 ### Rate Limit Response
 **Request:**

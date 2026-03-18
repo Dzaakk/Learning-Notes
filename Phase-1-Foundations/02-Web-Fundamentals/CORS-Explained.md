@@ -71,4 +71,7 @@ Access-Control-Request-Headers: Content-Type
 - **Problem**: `Access-Control-Allow-Origin: *` + cookies = forbidden.
 - **Solution**: Specify exact origin: `Access-Control-Allow-Origin: https://example.com`.
 
+### Visual Diagram
+![socket](../../images/Phase-1-Foundations/socket.png)
+
 

@@ -68,3 +68,9 @@ When you type a URL:
 3. Sends an **HTTP/HTTPS request**.
 4. The server processes it and replies with an **HTTP response**.
 5. Your browser renders it — securely, if using HTTPS.
+
+### TCP Three-Way Handshake (Connection Setup)
+![TCP Three-Way Handshake](../../images/Phase-1-Foundations/three-way-handshake.png)
+
+### Visual Diagram (UDP vs TCP)
+![udp vs tcp](../../images/Phase-1-Foundations/udp-vs-tcp.png)
